@@ -7,17 +7,20 @@ with the server module (and chat application).
 '''
 
 import socket, select
+from cli import CLI
 from sys import stdin, stdout
 
 
 # Constants
+UI = CLI()
 HOST = socket.gethostname()
 PORT = 5050
 SOCKETS = []
 
+
 # User input
 def input_prompt(user):
-    stdout.write(f'{user} > ')
+    stdout.write(UI.fg.lightblue, f'{user} > ')
     stdout.flush()
 
 
@@ -28,17 +31,17 @@ def client():
     shuts down if a server disconnects.
     '''
     # get the username
-    user = input('\nEnter username: ')                      
+    user = input(f'{UI.bg.lightgrey} Enter username: {UI.fg.black}')                      
 
     # Create a new socket using IPv4 address familty (AF_INET),
     # and TCP protocol (SOCK_STREAM)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             
         # create server socket and connect
-        print('\nConnecting to server...')    
+        print(f'\n{UI.fg.blue} Connecting to server...')    
         server = socket.socket()
         server.connect((HOST, PORT))
-        print(f'...Connected to server at host: {HOST}, port: {PORT}')
+        print(f'{UI.fg.lightblue} ...Connected to server at host: {HOST}, port: {PORT}')
 
         # send initial message to server with username
         server.send(user.encode())           
@@ -57,8 +60,8 @@ def client():
                     message = s.recv(server.BUFFER_MAX).decode()
                     # if the server shuts down, then message will be an empty string.
                     if not message:
-                        print('\n***Server Disconnected!***')
-                        print('\nshutting down...')
+                        print(f'{UI.fg.red}\n***Server Disconnected!***')
+                        print(f'{UI.fg.red}\nshutting down...')
                         s.shutdown(2)
                         s.close()
                         exit()
