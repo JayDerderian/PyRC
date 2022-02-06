@@ -5,6 +5,13 @@ CS 594
 Application module - the core functionality of the IRC Chat program.
 This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
+
+NOTE: 
+    Modify this to have fancy CLI colors? 
+        see -> https://www.geeksforgeeks.org/print-colors-python-terminal/
+            -> 
+            
+    Find ways to improve on design?
 '''
 
 

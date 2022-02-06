@@ -24,36 +24,43 @@ def input_prompt(user):
 # main client method
 def client():
     '''
-    main client method for application. handles messages
+    main client method for application. handles messages and
+    shuts down if a server disconnects.
     '''
+    # get the username
     user = input('\nEnter username: ')                      
 
     # Create a new socket using IPv4 address familty (AF_INET),
     # and TCP protocol (SOCK_STREAM)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             
-        print('\nConnecting to server...')    # create server socket and connect
+        # create server socket and connect
+        print('\nConnecting to server...')    
         server = socket.socket()
         server.connect((HOST, PORT))
         print(f'...Connected to server at host: {HOST}, port: {PORT}')
 
-        server.send(user.encode())           # send initial message to server with username
+        # send initial message to server with username
+        server.send(user.encode())           
 
         # main communication loop
         while True:
-            SOCKETS = [stdin, s]  # check stdin for client messages and server socket for server messages
+
+            # check stdin for client messages and server socket for server messages
+            SOCKETS = [stdin, s]  
             read_sock, write_sock, err_sock = select.select(SOCKETS)
+
             # read each socket
             for notified in read_sock:
                 # messages from the server
                 if notified == s:
                     message = s.recv(server.BUFFER_MAX).decode()
                     # if the server shuts down, then message will be an empty string.
-                    # using 'with' means we don't need to use s.close()
                     if not message:
                         print('\n***Server Disconnected!***')
                         print('\nshutting down...')
                         s.shutdown(2)
+                        s.close()
                         exit()
                     # erase current line and show message, then display
                     # input prompt for client.
@@ -68,16 +75,16 @@ def client():
                     s.send(message.encode())
                     input_prompt()
 
+
+
 if __name__ == '__main__':
     client()
 
 
 '''
-NOTE
-
-Work the class below into an object in the above client()
-method.
+NOTE: Work the class below into an object in the above client() method.
 '''
+
 # client class. instantiate with each new session
 class Client:
     def __init__(self, name, host, port, server_socket):
