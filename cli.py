@@ -4,9 +4,9 @@ CS 594
 
 This module handles the cli for this application. 
 '''
-from sys import stdout, stdin
-from termcolor import colored as color
 
+from colorama import Fore, Back, Style
+from art import tprint
 
 class CLI:
     '''
@@ -15,6 +15,8 @@ class CLI:
 
     to display the username with black text on a light grey background
        print(CLI.bg.lightgrey, username, colors.fg.black) 
+    
+    made following this article -> https://www.geeksforgeeks.org/print-colors-python-terminal/
 
     made using ANSI Escape Sequence color constants and the termcolor module
     more info -> https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
@@ -57,6 +59,11 @@ class CLI:
         cyan = '\033[46m'
         lightgrey = '\033[47m'
 
-    # input prompt
-    def input_prompt(user):
-        print(color(f'{user} > ', 'blue'))
+    # ------------- general messages ------------------#
+
+    # client start up welcome message
+    def client_welcome(self):
+        return tprint('IRC 2022')
+    
+    def test(self):
+        return print(f'{self.fg.red}HELLO\n')

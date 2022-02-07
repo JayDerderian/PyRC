@@ -16,22 +16,24 @@ NOTE:
 
 
 import socket
+from cli import CLI
+
 
 # Globals
 DEFAULT_ROOM_NAME = '#default'
-
+UI = CLI()
 
 # Broadcast a message to the server and to all clients in that room
 def message_broadcast(room, sender_name, sender_socket, message):
-    print(f"{room.name} : {sender_name} > {message}", end='\r')
+    print(f'{UI.bg.black}{room.name} : {sender_name} > {message} {UI.fg.lightblue}', end='\r')
 
     # Send the message to all clients except the one that sent the messaage
     for client_socket in room.client_sockets:
         if client_socket != sender_socket:
             try:
-                client_socket.send(f"{room.name} : {sender_name} > {message}".encode())
+                client_socket.send(f'{UI.bg.black}{room.name} : {sender_name} > {message}{UI.fg.lightblue}'.encode())
             except:
-                print('Failed to send message to client')
+                print(f'{UI.bg.lightgrey} Failed to send message to client {UI.fg.red}')
 
 
 # The container that has rooms, which have lists of clients
@@ -52,14 +54,14 @@ class IRC_Application:
     # create the room if it does not exist, then join the room the user specified
     def join_room(self, room_to_join, sender_socket, sender_name):
         if room_to_join[0] != '#':
-            sender_socket.send("Error: Room name must begin with a '#'\n".encode())
+            sender_socket.send(f"{UI.bg.black} Error: Room name must begin with a '#'{UI.fg.red}\n".encode())
             return
         if room_to_join not in self.rooms:  # Assume that the room does not exist yet
             self.create_room(room_to_join, sender_socket, sender_name)
         else:  # otherwise, go through the room members to make sure that the sender is not in it already
             for current_members in self.rooms[room_to_join].client_sockets:
                 if sender_socket == current_members:
-                    sender_socket.send(f"Error: You are already in the room: {room_to_join}\n".encode())
+                    sender_socket.send(f"{UI.bg.black}Error: You are already in the room: {room_to_join}{UI.fg.lightred}\n".encode())
                 else:
                     # if we are here then the room exists and the sender is not in it.
                     self.rooms[room_to_join].add_new_client_to_chatroom(sender_name, sender_socket)
@@ -75,9 +77,9 @@ class IRC_Application:
     # remove user from room and delete room if it is empty
     def leave_room(self, room_to_leave, sender_socket, sender_name):
         if room_to_leave not in self.rooms:
-            sender_socket.send("Error: Room does not exist\n".encode())
+            sender_socket.send(f"{UI.bg.black}Error: Room does not exist{UI.fg.red}\n".encode())
         elif sender_socket not in self.rooms[room_to_leave].client_sockets:
-            sender_socket.send("Error: You are not in that room\n".encode())
+            sender_socket.send(f"{UI.bg.black}Error: You are not in that room{UI.fg.lightred}\n".encode())
         else:
             self.rooms[room_to_leave].remove_client_from_chatroom(sender_name, sender_socket)
             if not self.rooms[room_to_leave].client_sockets:
@@ -88,16 +90,21 @@ class IRC_Application:
     def message_rooms(self, rooms_to_send, sender_socket, sender_name, message):
         for room in rooms_to_send:
             if room not in self.rooms:
-                sender_socket.send(f"Error: {room} room does not exist\n".encode())
+                sender_socket.send(f"{UI.bg.black}Error: Room does not exist{UI.fg.red}\n".encode())
                 continue
             if sender_socket not in self.rooms[room].client_sockets:
-                sender_socket.send(f"Error: You are not in the {room} room\n".encode())
+                sender_socket.send(f"{UI.bg.black}Error: You are not in the {room} room{UI.fg.lightred}\n".encode())
                 continue
             message_broadcast(self.rooms[room], sender_name, sender_socket, message)
 
     def message_parse(self, sender_socket, sender_name, message):
         # Case where message is not a command:
         # The message is sent to the default channel
+        '''
+        NOTE: May need to account for UI colors {UI.fg.color} in the strings!!!
+              Double check the client loop. I dont think we'll have to worry, just just
+              be sure...
+        '''
         if message[0] != '/':
             message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, sender_socket, message)
 
