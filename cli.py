@@ -3,10 +3,16 @@ Jay Derderian
 CS 594
 
 This module handles the cli for this application. 
+
+NOTE:
+    read these:
+        -> https://pypi.org/project/art/
+        -> https://www.geeksforgeeks.org/print-colors-python-terminal/
+        -> https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 '''
 
-from colorama import Fore, Back, Style
 from art import tprint
+from colorama import Fore, Back, Style
 
 class CLI:
     '''
@@ -15,11 +21,8 @@ class CLI:
 
     to display the username with black text on a light grey background
        print(CLI.bg.lightgrey, username, colors.fg.black) 
-    
-    made following this article -> https://www.geeksforgeeks.org/print-colors-python-terminal/
 
     made using ANSI Escape Sequence color constants and the termcolor module
-    more info -> https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
     '''
     def __init__(self):
         self.reset = '\033[0m'
