@@ -11,7 +11,9 @@ NOTE:
         -> https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
 '''
 
-from art import tprint
+import argparse
+from sys import stdout, stdin
+from art import tprint, text2art
 from colorama import Fore, Back, Style
 
 class CLI:
@@ -19,12 +21,11 @@ class CLI:
     import and instantiate this class to use foreground and background
     colors in the terminal while using the IRC application. 
 
-    to display the username with black text on a light grey background
-       print(CLI.bg.lightgrey, username, colors.fg.black) 
-
     made using ANSI Escape Sequence color constants and the termcolor module
     '''
-    def __init__(self):
+    def __init__(self, debug=False):
+        self.debug = debug
+
         self.reset = '\033[0m'
         self.bold = '\033[01m'
         self.disable = '\033[02m'
@@ -33,40 +34,44 @@ class CLI:
         self.strikethrough = '\033[09m'
         self.invisible = '\033[08m'
     
-    # foreground colors
-    class fg:
-        black = '\033[30m'
-        red = '\033[31m'
-        green ='\033[32m'
-        orange ='\033[33m'
-        blue = '\033[34m'
-        purple = '\033[35m'
-        cyan = '\033[36m'
-        lightgrey = '\033[37m'
-        darkgrey = '\033[90m'
-        lightred = '\033[91m'
-        lightgreen = '\033[92m'
-        yellow = '\033[93m'
-        lightblue = '\033[94m'
-        pink = '\033[95m'
-        lightcyan = '\033[96m'
+        # foreground colors
+        self.fg = {
+            'black': '\033[30m',
+            'red':  '\033[31m',
+            'green': '\033[32m',
+            'orange': '\033[33m',
+            'blue': '\033[34m',
+            'purple': '\033[35m',
+            'cyan': '\033[36m',
+            'lightgrey': '\033[37m',
+            'darkgrey': '\033[90m',
+            'lightred': '\033[91m',
+            'lightgreen': '\033[92m',
+            'yellow': '\033[93m',
+            'lightblue': '\033[94m',
+            'pink': '\033[95m',
+            'lightcyan': '\033[96m'
+        }
 
-    # background colors
-    class bg:
-        black = '\033[40m'
-        red = '\033[41m'
-        green = '\033[42m'
-        orange = '\033[43m'
-        blue = '\033[44m'
-        purple = '\033[45m'
-        cyan = '\033[46m'
-        lightgrey = '\033[47m'
+        # background colors
+        self.bg = {
+            'black': '\033[40m',
+            'red': '\033[41m',
+            'green': '\033[42m',
+            'orange': '\033[43m',
+            'blue': '\033[44m',
+            'purple': '\033[45m',
+            'cyan': '\033[46m',
+            'lightgrey': '\033[47m'
+        }
+
+    def test(self):
+        stdout.write(f'{self.fg["red"]}HELLO')
+        stdout.flush()
+
 
     # ------------- general messages ------------------#
 
     # client start up welcome message
     def client_welcome(self):
         return tprint('IRC 2022')
-    
-    def test(self):
-        return print(f'{self.fg.red}HELLO\n')

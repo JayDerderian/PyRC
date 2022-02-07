@@ -29,6 +29,7 @@ def client():
     main client method for application. handles messages and
     shuts down if a server disconnects.
     '''
+
     # get the username
     user = input(f'{UI.bg.lightgrey}Enter username:{UI.fg.black}')                      
 

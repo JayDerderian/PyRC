@@ -4,7 +4,7 @@ CS 594
 
 Server module. Also runs main application (app.py).
 '''
-
+from cli import CLI
 import socket, select
 
 # Constants

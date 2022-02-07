@@ -31,9 +31,9 @@ def message_broadcast(room, sender_name, sender_socket, message):
     for client_socket in room.client_sockets:
         if client_socket != sender_socket:
             try:
-                client_socket.send(f'{UI.bg.black}{room.name} : {sender_name} > {message}{UI.fg.lightblue}'.encode())
+                client_socket.send(f'{room.name} : {sender_name} > {message}'.encode())
             except:
-                print(f'{UI.bg.lightgrey} Failed to send message to client {UI.fg.red}')
+                print(f'Failed to send message to client')
 
 
 # The container that has rooms, which have lists of clients
@@ -54,14 +54,14 @@ class IRC_Application:
     # create the room if it does not exist, then join the room the user specified
     def join_room(self, room_to_join, sender_socket, sender_name):
         if room_to_join[0] != '#':
-            sender_socket.send(f"{UI.bg.black} Error: Room name must begin with a '#'{UI.fg.red}\n".encode())
+            sender_socket.send(f"Error: Room name must begin with a '#'\n".encode())
             return
         if room_to_join not in self.rooms:  # Assume that the room does not exist yet
             self.create_room(room_to_join, sender_socket, sender_name)
         else:  # otherwise, go through the room members to make sure that the sender is not in it already
             for current_members in self.rooms[room_to_join].client_sockets:
                 if sender_socket == current_members:
-                    sender_socket.send(f"{UI.bg.black}Error: You are already in the room: {room_to_join}{UI.fg.lightred}\n".encode())
+                    sender_socket.send(f"Error: You are already in the room:\n".encode())
                 else:
                     # if we are here then the room exists and the sender is not in it.
                     self.rooms[room_to_join].add_new_client_to_chatroom(sender_name, sender_socket)
@@ -77,9 +77,9 @@ class IRC_Application:
     # remove user from room and delete room if it is empty
     def leave_room(self, room_to_leave, sender_socket, sender_name):
         if room_to_leave not in self.rooms:
-            sender_socket.send(f"{UI.bg.black}Error: Room does not exist{UI.fg.red}\n".encode())
+            sender_socket.send(f"Error: Room does not exist\n".encode())
         elif sender_socket not in self.rooms[room_to_leave].client_sockets:
-            sender_socket.send(f"{UI.bg.black}Error: You are not in that room{UI.fg.lightred}\n".encode())
+            sender_socket.send(f"Error: You are not in that room\n".encode())
         else:
             self.rooms[room_to_leave].remove_client_from_chatroom(sender_name, sender_socket)
             if not self.rooms[room_to_leave].client_sockets:
@@ -90,10 +90,10 @@ class IRC_Application:
     def message_rooms(self, rooms_to_send, sender_socket, sender_name, message):
         for room in rooms_to_send:
             if room not in self.rooms:
-                sender_socket.send(f"{UI.bg.black}Error: Room does not exist{UI.fg.red}\n".encode())
+                sender_socket.send(f"Error: Room does not exist\n".encode())
                 continue
             if sender_socket not in self.rooms[room].client_sockets:
-                sender_socket.send(f"{UI.bg.black}Error: You are not in the {room} room{UI.fg.lightred}\n".encode())
+                sender_socket.send(f"Error: You are not in the {room} room\n".encode())
                 continue
             message_broadcast(self.rooms[room], sender_name, sender_socket, message)
 
