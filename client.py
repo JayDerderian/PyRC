@@ -19,7 +19,7 @@ SOCKETS = []
 
 # User input
 def input_prompt(user):
-    stdout.write(f'{UI.fg.lightblue} {user} > ')
+    stdout.write(f'{user} > ')
     stdout.flush()
 
 
@@ -30,21 +30,26 @@ def client():
     shuts down if a server disconnects.
     '''
 
+    # display welcome message
+    UI.client_welcome('IRC 2022')
     # get the username
-    user = input(f'{UI.bg.lightgrey}Enter username:{UI.fg.black}')                      
+    print(f'Enter username:')
+    user = input()                      
 
     # Create a new socket using IPv4 address familty (AF_INET),
     # and TCP protocol (SOCK_STREAM)
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             
-        # create server socket and connect
-        print(f'\n{UI.bg.black}Connecting to server...{UI.fg.blue}')    
-        server = socket.socket()
-        server.connect((HOST, PORT))
-        print(f'{UI.bg.black}...Connected to server at host: {HOST}, port: {PORT}{UI.fg.lightblue}')
-
-        # send initial message to server with username
-        server.send(user.encode())           
+        # attempt to contact server
+        print(f'\nConnecting to server...')    
+        try:
+            s.connect((HOST, PORT))
+            # send initial message to server with username
+            s.send(user.encode())
+        except s.error as e:
+            print(e)
+            
+        print(f'...Connected to server at host: {HOST}, port: {PORT}')           
 
         # main communication loop
         while True:
@@ -57,7 +62,7 @@ def client():
             for notified in read_sock:
                 # messages from the server
                 if notified == s:
-                    message = s.recv(server.BUFFER_MAX).decode()
+                    message = s.recv(s.BUFFER_MAX).decode()
                     # if the server shuts down, then message will be an empty string.
                     if not message:
                         print(f'{UI.bg.black}\n***Server Disconnected!***{UI.fg.red}')
@@ -69,7 +74,13 @@ def client():
                     # input prompt for client.
                     stdout.write('\r')
                     stdout.flush()
+                    '''
+                    NOTE: parse and encode message with UI here. 
+                          look at app.message_parse() and utilize something similar to
+                          assist with UI color selection.
+                    '''
                     stdout.write(message)
+
                     input_prompt(user)
 
                 # get user input and send a message
@@ -100,7 +111,8 @@ if __name__ == '__main__':
 
 # client class. instantiate with each new session
 class Client:
-    def __init__(self, name, host, port, server_socket):
+    def __init__(self, name, host, port, server_socket, debug=False):
+        self.debug = debug
         self.name = name
         self.host = host
         self.port = port
@@ -120,7 +132,7 @@ class Client:
 
     # startup message
     def startup_message(self):
-        welcome = f'{UI.bg.lightgrey}'
+        return UI.client_welcome(self.name)
 
     # main client program
     def client(self):
@@ -128,18 +140,20 @@ class Client:
         main client method for application. handles messages and
         shuts down if a server disconnects.
         '''
+        # welcome message.
+        self.startup_message()
         # get the username
-        user = input(f'{UI.bg.lightgrey}Enter username: {UI.fg.black}')                      
+        user = input(f'Enter username:\n')                      
 
         # Create a new socket using IPv4 address familty (AF_INET),
         # and TCP protocol (SOCK_STREAM)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 
             # create server socket and connect
-            print(f'\n{UI.bg.black}Connecting to server...{UI.fg.blue}')    
+            print(f'Connecting to server...')    
             server = socket.socket()
             server.connect((HOST, PORT))
-            print(f'{UI.bg.black}...Connected to server at host: {HOST}, port: {PORT}{UI.fg.lightblue}')
+            print(f'...Connected to server at host: {HOST}, port: {PORT}')
 
             # send initial message to server with username
             server.send(user.encode())           

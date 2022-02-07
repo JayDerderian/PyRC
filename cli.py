@@ -6,15 +6,54 @@ This module handles the cli for this application.
 
 NOTE:
     read these:
+        -> http://patorjk.com/software/taag/#p=display&f=Alpha&t=ART
         -> https://pypi.org/project/art/
         -> https://www.geeksforgeeks.org/print-colors-python-terminal/
         -> https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-'''
+    
 
-import argparse
-from sys import stdout, stdin
-from art import tprint, text2art
-from colorama import Fore, Back, Style
+    find a way to detect system and determine which library to use?
+    some command terminals might not work with these libraries...
+
+    execute during import lines, possiblity in def __init(self)__?
+    ex:
+        if os.getenv('ANSI_COLORS_DISABLED') is None:
+
+    the goal is to make this module reusable between projects!
+
+    cool fonts (text2art):
+        - tarty1 & tarty2
+        - alligator
+        - charact4
+        - tiles
+        - isometric2
+        - tinker-toy
+        - usaflag
+        - dietcola
+        - 1943
+        - slant
+        - soft
+        - alpha
+        - threepoint
+        - georgia11
+        - block
+        - fireing
+
+'''
+import os
+
+from random import choice
+
+from art import (
+    tprint, text2art, aprint, art_dic, font_list,
+    FONT_NAMES, decor, decor_dic, randart
+) 
+from colorama import (
+    Fore, Back, Style
+)
+from termcolor import (
+    colored, cprint 
+)
 
 class CLI:
     '''
@@ -24,6 +63,7 @@ class CLI:
     made using ANSI Escape Sequence color constants and the termcolor module
     '''
     def __init__(self, debug=False):
+        
         self.debug = debug
 
         self.reset = '\033[0m'
@@ -65,13 +105,53 @@ class CLI:
             'lightgrey': '\033[47m'
         }
 
+
+    ## TESTER ###
+
     def test(self):
-        stdout.write(f'{self.fg["red"]}HELLO')
-        stdout.flush()
+        f = choice(FONT_NAMES) 
+        print('\n', text2art(text='HELLO', font=f))
+        print(f'\nFONT: {f}\n')
+        
 
 
-    # ------------- general messages ------------------#
+    ## FANCY STUFF ##
 
-    # client start up welcome message
-    def client_welcome(self):
-        return tprint('IRC 2022')
+    def rainbow_word(self, word):
+        '''
+        prints a word out letter by letter each with an individual color
+        '''
+        ...
+
+
+    ## CLIENT UI ##
+
+    def client_welcome(self, app_name):
+        '''
+        welcome! should display the app name, author,
+        version.
+        then display options
+            - join new room?
+            - see current room list
+            - 
+        '''
+        return tprint(f'{app_name}')
+
+    def client_menu(self):
+        ...
+
+
+
+    ## APP UI ##
+    
+    def input_prompt(self):
+        ...
+    
+    def room_list(self):
+        ...
+    
+    def user_list(self):
+        ...
+    
+    def error_messages(self):
+        ...

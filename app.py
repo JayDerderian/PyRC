@@ -16,22 +16,20 @@ NOTE:
 
 
 import socket
-from cli import CLI
 
 
-# Globals
+# Constants
 DEFAULT_ROOM_NAME = '#default'
-UI = CLI()
 
 # Broadcast a message to the server and to all clients in that room
-def message_broadcast(room, sender_name, sender_socket, message):
-    print(f'{UI.bg.black}{room.name} : {sender_name} > {message} {UI.fg.lightblue}', end='\r')
+def message_broadcast(room, name, socket, message):
+    print(f'{room.name} : {name} > {message}', end='\r')
 
     # Send the message to all clients except the one that sent the messaage
     for client_socket in room.client_sockets:
-        if client_socket != sender_socket:
+        if client_socket != socket:
             try:
-                client_socket.send(f'{room.name} : {sender_name} > {message}'.encode())
+                client_socket.send(f'{room.name} : {name} > {message}'.encode())
             except:
                 print(f'Failed to send message to client')
 
@@ -48,7 +46,30 @@ class IRC_Application:
             room_list = room_list + room.name + ' '
         room_list = room_list + '\n'
         return room_list
+    
+    def help(self):
+        '''
+        list text commands
+        '''
+        ...
 
+    def show_current_room(self):
+        '''
+        display name of current room
+        '''
+        ...
+    
+    def show_users(self):
+        '''
+        show all users in the current room
+        '''
+        ...
+    
+    def show_connection(self):
+        '''
+        show current client's name, and socket info.
+        '''
+        ...
 
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
@@ -101,9 +122,7 @@ class IRC_Application:
         # Case where message is not a command:
         # The message is sent to the default channel
         '''
-        NOTE: May need to account for UI colors {UI.fg.color} in the strings!!!
-              Double check the client loop. I dont think we'll have to worry, just just
-              be sure...
+        NOTE: Will need to coordinate with the CLI instance on the Client application!
         '''
         if message[0] != '/':
             message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, sender_socket, message)
@@ -183,9 +202,14 @@ class IRC_Application:
 
 
 class Chatroom:
+    '''
+    NOTE. create a self.text_color field to display all text for this
+          chatroom in a specific color.
+    '''
     # Give a Chatroom a name and list of client's sockets in this room 
-    def __init__(self, room_name):
+    def __init__(self, room_name, text_color=None):
         self.name = room_name
+        self.text_color = text_color
         self.client_sockets = []
         self.client_list = {}       # A dictionary of clients with sockets as the key and username as the value
 

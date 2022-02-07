@@ -4,8 +4,9 @@ CS 594
 
 Server module. Also runs main application (app.py).
 '''
-from cli import CLI
+
 import socket, select
+from app import IRC_Application, Chatroom
 
 # Constants
 PORT = 5050
@@ -15,9 +16,9 @@ BUFFER_MAX = 2048
 CLIENT_MAX = 10
 
 # Application and Chatroom instances
-# app = IRC_App() 
+# irc = IRC_Application()
 # default_room = Chatroom(name=Chatrooms.DEFAULT_NAME)
-# app.rooms[Chatrooms.DEFAULT_NAME] = default_room
+# irc.rooms[Chatrooms.DEFAULT_NAME] = default_room
 
 '''
 Add irc_instance and default chat room once they're ready
@@ -47,26 +48,28 @@ def server():
         
         # main communication loop
         while True:
-            read_sock, write_sock, err_sock = select.select(SOCKETS) # retrieve all sockets that have been read
+            # retrieve all sockets that have been read
+            read_sock, write_sock, err_sock = select.select(SOCKETS) 
             
             # iterate through read_sock 
             for notified in read_sock:    
                 # initial client connection            
                 if notified == s:         
                     new_client_sock, new_client_addr = s.accept()
-                    SOCKETS.append(new_client_sock)                   # save the new client socket
+                    # save the new client socket
+                    SOCKETS.append(new_client_sock)                   
                     print(f'\n...new client connected! addr:{new_client_addr}')
-                    
-                    user = new_client_sock.recv(BUFFER_MAX).decode()  # save username
+                    # save username
+                    user = new_client_sock.recv(BUFFER_MAX).decode() 
                     CLIENTS[new_client_sock] = user
 
                     '''
                     create new chatroom here using new app instance...
                     '''
 
-                # existing client communication
+                # existing client communication (new message)
                 else:                    
-                    message = notified.recv(BUFFER_MAX).decode()      # new message
+                    message = notified.recv(BUFFER_MAX).decode()      
                     
                     if not message:
                         print("\n***all clients disconnected!***")
@@ -81,6 +84,7 @@ def server():
                         '''
                         SOCKETS.remove(notified)
                         CLIENTS.pop(notified)
+                        s.close()
                         break
                     else:
                         ...
