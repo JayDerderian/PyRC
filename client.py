@@ -4,176 +4,116 @@ CS 594
 
 Client module. Handles front end of client application, and communicates
 with the server module (and chat application).
+
+NOTE: maybe find a way to specify connection info via argparse?
+      see -> https://www.networkcomputing.com/data-centers/python-network-programming-handling-socket-errors
+
+      long term goal: connect over internet, not just local host!
 '''
 
 import socket, select
-from cli import CLI
 from sys import stdin, stdout
+
+from cli import CLI
+from info import APP_INFO, CLIENT_COMMANDS
+
 
 # Constants
 UI = CLI()
 HOST = socket.gethostname()
 PORT = 5050
+BUFFER_MAX = 2048
 SOCKETS = []
-
-
-# User input
-def input_prompt(user):
-    stdout.write(f'{user} > ')
-    stdout.flush()
-
-
-# main client method
-def client():
-    '''
-    main client method for application. handles messages and
-    shuts down if a server disconnects.
-    '''
-
-    # display welcome message
-    UI.client_welcome('IRC 2022')
-    # get the username
-    print(f'Enter username:')
-    user = input()                      
-
-    # Create a new socket using IPv4 address familty (AF_INET),
-    # and TCP protocol (SOCK_STREAM)
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            
-        # attempt to contact server
-        print(f'\nConnecting to server...')    
-        try:
-            s.connect((HOST, PORT))
-            # send initial message to server with username
-            s.send(user.encode())
-        except s.error as e:
-            print(e)
-            
-        print(f'...Connected to server at host: {HOST}, port: {PORT}')           
-
-        # main communication loop
-        while True:
-
-            # check stdin for client messages and server socket for server messages
-            SOCKETS = [stdin, s]  
-            read_sock, write_sock, err_sock = select.select(SOCKETS)
-
-            # read each socket
-            for notified in read_sock:
-                # messages from the server
-                if notified == s:
-                    message = s.recv(s.BUFFER_MAX).decode()
-                    # if the server shuts down, then message will be an empty string.
-                    if not message:
-                        print(f'{UI.bg.black}\n***Server Disconnected!***{UI.fg.red}')
-                        print(f'{UI.bg.black}\nshutting down...{UI.fg.red}')
-                        s.shutdown(2)
-                        s.close()
-                        exit()
-                    # erase current line and show message, then display
-                    # input prompt for client.
-                    stdout.write('\r')
-                    stdout.flush()
-                    '''
-                    NOTE: parse and encode message with UI here. 
-                          look at app.message_parse() and utilize something similar to
-                          assist with UI color selection.
-                    '''
-                    stdout.write(message)
-
-                    input_prompt(user)
-
-                # get user input and send a message
-                else:
-                    message = stdin.readline()
-                    s.send(message.encode())
-                    input_prompt()
-
-
-
-if __name__ == '__main__':
-    client()
-
-
-#-----------------------------------------------------------------------------------------------------------#
-
-'''
-NOTE: Work the functions above into the class below, and create a 
-      separate run_client() method that instantiates the Client() object. 
-'''
-
-'''
-if __name__ == '__main__':
-    c = Client(host=HOST, port=PORT)
-    c.server()
-'''
 
 
 # client class. instantiate with each new session
 class Client:
-    def __init__(self, name, host, port, server_socket, debug=False):
-        self.debug = debug
-        self.name = name
+    def __init__(self, name, host, port, debug=False):
+
+        self.debug = debug          # debugger flag
+
+        self.name = name            # client name, host, and port
         self.host = host
         self.port = port
-        self.server_socket = server_socket
+
+        self.menu = CLIENT_COMMANDS # list of client commands
+        self.UI = CLI()             # UI instance attached to this client
+
+        self.messages = {}          # a dictionary of pm's. 
+                                    # key is user that sent it, value is the message
     
     @classmethod
     def from_input(cls, server_socket):
-        return(input(f'{UI.bg.lightgrey} Enter username: {UI.fg.darkgrey} '),
+        return(input(f'Enter username: '),
                HOST, 
                PORT,
                server_socket
         )
 
     def input_prompt(self):
-        stdout.write(f'{UI.fg.blue} {self.name} > ')
+        stdout.write(f'{self.name} > ')
         stdout.flush()
 
-    # startup message
-    def startup_message(self):
-        return UI.client_welcome(self.name)
+
+    def show_commands(self):
+        ''''
+        Display available commands and how to join/leave rooms 
+        '''
+        for key in self.menu:
+            print(self.menu[key])
+ 
 
     # main client program
-    def client(self):
+    def client(self, debug=False):
         '''
         main client method for application. handles messages and
         shuts down if a server disconnects.
         '''
-        # welcome message.
-        self.startup_message()
+
+        # display welcome message
+        self.UI.client_info(APP_INFO)
+
         # get the username
-        user = input(f'Enter username:\n')                      
+        user = input('Enter username: ') 
+
+        '''
+        NOTE: specify local host or internet connection here?
+        '''                     
 
         # Create a new socket using IPv4 address familty (AF_INET),
         # and TCP protocol (SOCK_STREAM)
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                 
-            # create server socket and connect
-            print(f'Connecting to server...')    
-            server = socket.socket()
-            server.connect((HOST, PORT))
-            print(f'...Connected to server at host: {HOST}, port: {PORT}')
-
-            # send initial message to server with username
-            server.send(user.encode())           
+            # attempt to contact server
+            print(f'\nConnecting to server...')    
+            try:
+                # send initial message to server with username
+                s.connect((self.host, self.port))
+                s.send(user.encode())
+                print(f'...Connected to server at host: {self.host}, port: {self.port}')  
+            except s.error as e:
+                print(self.UI.error_messages('Could not connect!'))
+                print(e)
 
             # main communication loop
             while True:
 
                 # check stdin for client messages and server socket for server messages
+                '''NOTE: Is adding stdn to SOCKETS causing issues? 
+                         Need a way to check for text input from the user!
+                '''
                 SOCKETS = [stdin, s]  
-                read_sock, write_sock, err_sock = select.select(SOCKETS)
+                read_sock = select.select(SOCKETS, [], [])[0]
 
                 # read each socket
                 for notified in read_sock:
                     # messages from the server
                     if notified == s:
-                        message = s.recv(server.BUFFER_MAX).decode()
+                        message = s.recv(s.BUFFER_MAX).decode()
                         # if the server shuts down, then message will be an empty string.
                         if not message:
-                            print(f'{UI.bg.black}\n***Server Disconnected!***{UI.fg.red}')
-                            print(f'{UI.bg.black}\nshutting down...{UI.fg.red}')
+                            print(f'\n***Server Disconnected!***')
+                            print(f'\nshutting down...\n')
                             s.shutdown(2)
                             s.close()
                             exit()
@@ -181,7 +121,13 @@ class Client:
                         # input prompt for client.
                         stdout.write('\r')
                         stdout.flush()
+                        '''
+                        NOTE: parse and encode message with UI here. 
+                              look at app.message_parse() and utilize something similar to
+                              assist with UI color selection.
+                        '''
                         stdout.write(message)
+
                         self.input_prompt(user)
 
                     # get user input and send a message
@@ -189,3 +135,11 @@ class Client:
                         message = stdin.readline()
                         s.send(message.encode())
                         self.input_prompt()
+
+
+
+if __name__ == '__main__':
+    c = Client(name="Client", 
+               host=HOST, 
+               port=PORT)
+    c.client()

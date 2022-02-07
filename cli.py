@@ -38,15 +38,18 @@ NOTE:
         - georgia11
         - block
         - fireing
+        - strikethrough
+        - rev
 
 '''
 import os
 
+from sys import stdout, stdin
 from random import choice
 
 from art import (
     tprint, text2art, aprint, art_dic, font_list,
-    FONT_NAMES, decor, decor_dic, randart
+    FONT_NAMES, decor, decor_dic, randart,
 ) 
 from colorama import (
     Fore, Back, Style
@@ -126,7 +129,7 @@ class CLI:
 
     ## CLIENT UI ##
 
-    def client_welcome(self, app_name):
+    def app_name(self, app_name:str, f=None):
         '''
         welcome! should display the app name, author,
         version.
@@ -135,23 +138,55 @@ class CLI:
             - see current room list
             - 
         '''
+        if f is not None:
+            if type(f) == str:
+                return tprint(f'{app_name}', font=f)
+            else:
+                raise TypeError('font name must be a string!')
         return tprint(f'{app_name}')
 
-    def client_menu(self):
-        ...
+
+    def client_info(self, info:dict):
+        '''
+        displays app info
+        (author, version # (with date))
+        '''
+        print(text2art(info["Name"], font='tarty2'))
+        print(art_dic.art_dic["kirby dance"], '\n')
+        print(text2art(info["Version"], font='tiny2'))
+        print(text2art(info["Author"], font='tiny2'), '\n')
+
+    def client_menu(self, menu:list[str]):
+        '''
+        displays a menu utilizing a list of strings representing 
+        each line in the menu.
+        '''
+        for line in menu:
+            print(text2art(menu[line], font='tiny2'))
 
 
 
     ## APP UI ##
     
-    def input_prompt(self):
+    def input_prompt(self, name):
+        stdout.write(f'{Fore.LIGHTBLUE_EX}{name} > ')
+        stdout.flush()
+    
+    def room_list(self, rooms):
         ...
     
-    def room_list(self):
+    def user_list(self, users):
         ...
     
-    def user_list(self):
-        ...
-    
-    def error_messages(self):
-        ...
+    def error_messages(self, errors):
+        '''
+        Display an error message, or list of messages
+        '''
+        if type(errors) == str:
+            print(f'{Fore.RED} ERROR: {errors}')
+        elif type(errors) == list:
+            print(f'{Fore.RED} ERROR')
+            for e in range(len(errors)):
+                print(f'{Fore.RED}{e} : {errors[e]}')
+        else:
+            raise TypeError('erros must be a single str or list[str]! type is:', type(errors))

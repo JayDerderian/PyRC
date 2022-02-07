@@ -6,17 +6,13 @@ Application module - the core functionality of the IRC Chat program.
 This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
 
-NOTE: 
-    Modify this to have fancy CLI colors? 
-        see -> https://www.geeksforgeeks.org/print-colors-python-terminal/
-            -> 
-            
+NOTE:
     Find ways to improve on design?
 '''
 
 
 import socket
-
+from info import APP_INFO, CLIENT_COMMANDS
 
 # Constants
 DEFAULT_ROOM_NAME = '#default'
@@ -59,13 +55,7 @@ class IRC_Application:
         '''
         ...
     
-    def show_users(self):
-        '''
-        show all users in the current room
-        '''
-        ...
-    
-    def show_connection(self):
+    def show_connection_info(self):
         '''
         show current client's name, and socket info.
         '''
