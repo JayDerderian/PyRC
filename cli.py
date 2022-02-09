@@ -6,6 +6,7 @@ This module handles the cli for this application.
 
 NOTE:
     read these:
+        -> https://stackoverflow.com/questions/287871/how-to-print-colored-text-to-the-terminal
         -> http://patorjk.com/software/taag/#p=display&f=Alpha&t=ART
         -> https://pypi.org/project/art/
         -> https://www.geeksforgeeks.org/print-colors-python-terminal/
@@ -55,7 +56,7 @@ from colorama import (
     Fore, Back, Style
 )
 from termcolor import (
-    colored, cprint 
+    colored, COLORS
 )
 
 class CLI:
@@ -146,7 +147,7 @@ class CLI:
         return tprint(f'{app_name}')
 
 
-    def client_info(self, info:dict):
+    def app_info(self, info:dict):
         '''
         displays app info
         (author, version # (with date))
@@ -156,6 +157,7 @@ class CLI:
         print(text2art(info["Version"], font='tiny2'))
         print(text2art(info["Author"], font='tiny2'), '\n')
 
+
     def client_menu(self, menu:list[str]):
         '''
         displays a menu utilizing a list of strings representing 
@@ -163,7 +165,6 @@ class CLI:
         '''
         for line in menu:
             print(text2art(menu[line], font='tiny2'))
-
 
 
     ## APP UI ##

@@ -2,144 +2,112 @@
 Jay Derderian
 CS 594
 
-Client module. Handles front end of client application, and communicates
-with the server module (and chat application).
+Client module. 
 
-NOTE: maybe find a way to specify connection info via argparse?
-      see -> https://www.networkcomputing.com/data-centers/python-network-programming-handling-socket-errors
-
-      long term goal: connect over internet, not just local host!
+Handles front end of client application, user message input, 
+and communicates with the server.
 '''
 
-import socket, select
-from sys import stdin, stdout
+import socket
+import threading
 
+from ui import GUI
 from cli import CLI
 from info import APP_INFO, CLIENT_COMMANDS
 
 
 # Constants
-UI = CLI()
+DEBUG = False
 HOST = socket.gethostname()
 PORT = 5050
+ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
-SOCKETS = []
+
+CLIENT_INFO = {
+    "Name": '',       # client user name
+    "Address": ADDR,  # (host, port)
+    "Sockets": {},    # key = 'server', value = socket
+    "Messages": {}    # key = 'sender', value = message (str)
+}
+
+TEXT = CLI()
+UI = GUI()
 
 
-# client class. instantiate with each new session
-class Client:
-    def __init__(self, name, host, port, debug=False):
+#------------------------------------START UP------------------------------------------
 
-        self.debug = debug          # debugger flag
+# display welcome message
+TEXT.app_info(APP_INFO)
+# get the username
+CLIENT_INFO["Name"] = input('Enter username > ')
 
-        self.name = name            # client name, host, and port
-        self.host = host
-        self.port = port
+# ****Create a new socket using IPv4 address familty (AF_INET),
+#     and TCP protocol (SOCK_STREAM)****
+SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        self.menu = CLIENT_COMMANDS # list of client commands
-        self.UI = CLI()             # UI instance attached to this client
+# attempt to contact server
+print(f'\nConnecting to server...')    
+try:
+    # send initial message (the username) to server
+    SOCKET.connect(CLIENT_INFO['Address'])
+    # save our server info (even though it says client)
+    CLIENT_INFO['Sockets']['Server'] = SOCKET
+    print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
+except:
+    print('...Could not connect!')
 
-        self.messages = {}          # a dictionary of pm's. 
-                                    # key is user that sent it, value is the message
-    
-    @classmethod
-    def from_input(cls, server_socket):
-        return(input(f'Enter username: '),
-               HOST, 
-               PORT,
-               server_socket
-        )
-
-    def input_prompt(self):
-        stdout.write(f'{self.name} > ')
-        stdout.flush()
+#-------------------------------------------------------------------------------------
 
 
-    def show_commands(self):
-        ''''
-        Display available commands and how to join/leave rooms 
-        '''
-        for key in self.menu:
-            print(self.menu[key])
- 
-
-    # main client program
-    def client(self, debug=False):
-        '''
-        main client method for application. handles messages and
-        shuts down if a server disconnects.
-        '''
-
-        # display welcome message
-        self.UI.client_info(APP_INFO)
-
-        # get the username
-        user = input('Enter username: ') 
-
-        '''
-        NOTE: specify local host or internet connection here?
-        '''                     
-
-        # Create a new socket using IPv4 address familty (AF_INET),
-        # and TCP protocol (SOCK_STREAM)
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                
-            # attempt to contact server
-            print(f'\nConnecting to server...')    
-            try:
-                # send initial message to server with username
-                s.connect((self.host, self.port))
-                s.send(user.encode())
-                print(f'...Connected to server at host: {self.host}, port: {self.port}')  
-            except s.error as e:
-                print(self.UI.error_messages('Could not connect!'))
-                print(e)
-
-            # main communication loop
-            while True:
-
-                # check stdin for client messages and server socket for server messages
-                '''NOTE: Is adding stdn to SOCKETS causing issues? 
-                         Need a way to check for text input from the user!
-                '''
-                SOCKETS = [stdin, s]  
-                read_sock = select.select(SOCKETS, [], [])[0]
-
-                # read each socket
-                for notified in read_sock:
-                    # messages from the server
-                    if notified == s:
-                        message = s.recv(s.BUFFER_MAX).decode()
-                        # if the server shuts down, then message will be an empty string.
-                        if not message:
-                            print(f'\n***Server Disconnected!***')
-                            print(f'\nshutting down...\n')
-                            s.shutdown(2)
-                            s.close()
-                            exit()
-                        # erase current line and show message, then display
-                        # input prompt for client.
-                        stdout.write('\r')
-                        stdout.flush()
-                        '''
-                        NOTE: parse and encode message with UI here. 
-                              look at app.message_parse() and utilize something similar to
-                              assist with UI color selection.
-                        '''
-                        stdout.write(message)
-
-                        self.input_prompt(user)
-
-                    # get user input and send a message
-                    else:
-                        message = stdin.readline()
-                        s.send(message.encode())
-                        self.input_prompt()
+# display available commands
+def show_commands():
+    ''''
+    display available commands and how to join/leave rooms 
+    '''
+    for key in CLIENT_COMMANDS:
+        print(CLIENT_COMMANDS[key])
 
 
+# message prompt for user
+def message():
+    '''
+    handle client messages
+    '''
+    while True:
+        message = input(f'{CLIENT_INFO["Name"]} > ')
+        '''check whether the user wants the show_commands() methods!'''
+        SOCKET.send(message.encode('ascii'))
 
-if __name__ == '__main__':
-    c = Client(name="Client", 
-               host=HOST, 
-               port=PORT)
-    c.client()
+
+# main client program
+def run_client():
+    '''
+    main client method for application. 
+    handles message I/O and shuts down if a server disconnects.
+    '''
+    # main communication loop
+    while True:
+        # case where we first connect to server
+        try:
+            message = SOCKET.recv(BUFFER_MAX).decode('ascii')
+            # check for connection confirmation
+            if message == 'Connected to server':
+                # send user name if connected
+                SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
+            # otherwise its some other message
+            else:
+                print(message)
+        # case where the server shuts down
+        except:
+            print("SERVER SHUT DOWN")
+            # might be redundant since we used 'with'
+            SOCKET.close() 
+            break
+
+#----------------------------------------------------------------------------
+
+# driver code
+receive_thread = threading.Thread(target=run_client)
+write_thread = threading.Thread(target=message)
+receive_thread.start()
+write_thread.start()
