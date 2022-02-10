@@ -22,21 +22,23 @@ SERVER_INFO = {
     "Rooms": [],
 }
 
-
 # Application and Chatroom instances
 # APP = IRC_Application()
 # default_room = Chatroom(name=Chatrooms.DEFAULT_NAME)
 # APP.rooms[Chatrooms.DEFAULT_NAME] = default_room
 
+#-------------------------START UP----------------------------------#
 
 # ****Create a new socket using IPv4 address familty (AF_INET),
 #     and TCP protocol (SOCK_STREAM)****
 print('\n***starting server***')
 SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 SOCKET.bind(ADDR)
-print(f'...bound at host:{ADDR[0]}, port:{ADDR[1]}...')
+print(f'\n...bound at host: {ADDR[0]}, port:{ADDR[1]}...')
 print('...listening...\n')
 SOCKET.listen(CLIENT_MAX)              # how many clients do we need to listen for?
+
+#-------------------------------------------------------------------#
 
 def broadcast(message):
     '''
@@ -56,6 +58,9 @@ def run_server():
         client, address = SOCKET.accept()  
         # new user!
         if client not in SERVER_INFO["Sockets"]:
+            # confirm connection to new user, and broadcast to app
+            client.send(f'Connected to server'.encode('ascii'))
+
             # get user name since that's the first message
             new_user = client.recv(BUFFER_MAX).decode('ascii') 
             SERVER_INFO["Sockets"].append(client)
@@ -63,10 +68,6 @@ def run_server():
 
             # alert new connection via the terminal
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
-            # confirm connection to new user, and broadcast to app
-            client.send(f'Connected to server'.encode('ascii'))
-            # NOTE broadcast() is temporary until IRC_App is ready
-            broadcast(f'{new_user} joined the server!'.encode('ascii'))
 
             # create a new thread for this client to handle message I/O
             thread = threading.Thread(target=handle, args=(client,))

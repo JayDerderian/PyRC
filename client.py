@@ -11,17 +11,19 @@ and communicates with the server.
 import socket
 import threading
 
-from ui import GUI
 from cli import CLI
 from info import APP_INFO, CLIENT_COMMANDS
 
 
 # Constants
 DEBUG = False
+
 HOST = socket.gethostname()
 PORT = 5050
 ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
+
+TEXT = CLI()
 
 CLIENT_INFO = {
     "Name": '',       # client user name
@@ -30,11 +32,10 @@ CLIENT_INFO = {
     "Messages": {}    # key = 'sender', value = message (str)
 }
 
-TEXT = CLI()
-UI = GUI()
 
 
-#------------------------------------START UP------------------------------------------
+
+#------------------------------------START UP------------------------------------------#
 
 # display welcome message
 TEXT.app_info(APP_INFO)
@@ -46,7 +47,7 @@ CLIENT_INFO["Name"] = input('Enter username > ')
 SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # attempt to contact server
-print(f'\nConnecting to server...')    
+print('Connecting to server...')    
 try:
     # send initial message (the username) to server
     SOCKET.connect(CLIENT_INFO['Address'])
@@ -56,8 +57,9 @@ try:
 except:
     print('...Could not connect!')
 
-#-------------------------------------------------------------------------------------
 
+
+#-------------------------------------------------------------------------------------#
 
 # display available commands
 def show_commands():
@@ -75,8 +77,12 @@ def message():
     '''
     while True:
         message = input(f'{CLIENT_INFO["Name"]} > ')
-        '''check whether the user wants the show_commands() methods!'''
-        SOCKET.send(message.encode('ascii'))
+        if message.split()[0]=='/help':
+            show_commands()
+        elif message.split()[0] == '/quit':
+            exit()
+        else:
+            SOCKET.send(message.encode('ascii'))
 
 
 # main client program
