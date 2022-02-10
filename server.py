@@ -4,7 +4,7 @@ CS 594
 
 Server module. Also runs main IRC application (app.py).
 '''
-
+import logging
 import socket
 import threading
 from app import IRC_Application, Chatroom
@@ -15,6 +15,7 @@ PORT = 5050
 ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
 CLIENT_MAX = 10
+DEFAULT_ROOM_NAME = '#default'
 
 SERVER_INFO = {
     "Sockets": [],
@@ -23,9 +24,9 @@ SERVER_INFO = {
 }
 
 # Application and Chatroom instances
-# APP = IRC_Application()
-# default_room = Chatroom(name=Chatrooms.DEFAULT_NAME)
-# APP.rooms[Chatrooms.DEFAULT_NAME] = default_room
+APP = IRC_Application()
+default_room = Chatroom(DEFAULT_ROOM_NAME)
+APP.rooms[DEFAULT_ROOM_NAME] = default_room
 
 #-------------------------START UP----------------------------------#
 
@@ -77,6 +78,9 @@ def run_server():
         else:
             message = client.recv(BUFFER_MAX).decode('ascii')
             # print recieved message in terminal for now
+            '''
+            NOTE: IRC message parser goes here. 
+            '''
             print(f'\n{message}')
 
 

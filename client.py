@@ -11,6 +11,7 @@ and communicates with the server.
 import socket
 import threading
 
+from ui import GUI
 from cli import CLI
 from info import APP_INFO, CLIENT_COMMANDS
 
@@ -24,6 +25,7 @@ ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
 
 TEXT = CLI()
+UI = GUI()
 
 CLIENT_INFO = {
     "Name": '',       # client user name
@@ -33,17 +35,14 @@ CLIENT_INFO = {
 }
 
 
-
-
-#------------------------------------START UP------------------------------------------#
+#----------------------------------START UP-----------------------------------------#
 
 # display welcome message
 TEXT.app_info(APP_INFO)
 # get the username
 CLIENT_INFO["Name"] = input('Enter username > ')
 
-# ****Create a new socket using IPv4 address familty (AF_INET),
-#     and TCP protocol (SOCK_STREAM)****
+# Create a new socket using IPv4 address familty (AF_INET) and TCP protocol (SOCK_STREAM)
 SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # attempt to contact server
@@ -56,10 +55,11 @@ try:
     print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
 except:
     print('...Could not connect!')
+    SOCKET.close()
 
 
+#-------------------------------CLIENT METHODS--------------------------------------#
 
-#-------------------------------------------------------------------------------------#
 
 # display available commands
 def show_commands():
@@ -79,8 +79,6 @@ def message():
         message = input(f'{CLIENT_INFO["Name"]} > ')
         if message.split()[0]=='/help':
             show_commands()
-        elif message.split()[0] == '/quit':
-            exit()
         else:
             SOCKET.send(message.encode('ascii'))
 
@@ -93,22 +91,30 @@ def run_client():
     '''
     # main communication loop
     while True:
-        # case where we first connect to server
         try:
             message = SOCKET.recv(BUFFER_MAX).decode('ascii')
-            # check for connection confirmation
+            # case where it's our first connection
             if message == 'Connected to server':
                 # send user name if connected
                 SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
             # otherwise its some other message
             else:
+                # parse message here (parse())
                 print(message)
         # case where the server shuts down
         except:
             print("SERVER SHUT DOWN")
-            # might be redundant since we used 'with'
             SOCKET.close() 
             break
+
+
+# message parser to use with CLI
+def parse(message):
+    if DEBUG:
+        print("\nmessage: ", message)
+    
+    ...
+
 
 #----------------------------------------------------------------------------
 

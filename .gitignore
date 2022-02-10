@@ -1,4 +1,4 @@
 /docs
-/test
+/venv
 /.vscode
 test.py

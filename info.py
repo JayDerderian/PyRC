@@ -27,5 +27,6 @@ CLIENT_COMMANDS = {
     "Send3":     "             ex: /send #dnd Man, I love DND!           ",
     "Send4":     "             ex: /send #dnd #orcs Check out my sheet!  ",
     "Members":   "  /members : Lists all clients in a room.              ",
-    "Quit":      "  /quit : Disconnects client from the server.          \n"
+    "Quit":      "  /quit : Disconnects client from the server.          ",
+    "Bottom":    "-------------------------------------------------------\n"
 }
