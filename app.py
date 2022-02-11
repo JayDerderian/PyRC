@@ -11,8 +11,8 @@ There is also built-in debugging functionality using logs.
 Set DEBUG to true to turn on logging system.
 '''
 
-import logging
 import socket
+import logging
 
 # Constants
 DEBUG = False
@@ -36,7 +36,7 @@ def message_broadcast(room, name, socket, message):
             try:
                 if DEBUG:
                     logging.info(f'app.message_broadcast() - sending: {room.name} : {name} > {message}')
-                '''NOTE client will need to prase to use CLI!'''
+                '''NOTE client will need to parse to use CLI!'''
                 client_socket.send(f'{room.name} : {name} > {message}'.encode())
             except:
                 print('IRC_APP ERROR : Failed to send message to client!')
@@ -159,8 +159,6 @@ class IRC_Application:
 
         # Case where user wants to list all rooms:
         elif message.split()[0] == "/list" and len(message.split()) == 1:
-            if DEBUG:
-                logging.info(f'app.message_parse() - {sender_name} requested room list')
             room_list = self.list_all_rooms()
             if DEBUG:
                 logging.info(f'app.message_parse() - sending {sender_name} room list {room_list} to {sender_socket}')
@@ -276,12 +274,12 @@ class Chatroom:
         self.name = room_name
         self.text_color = text_color
         self.client_sockets = []
-        self.client_list = {}       # A dictionary of clients with sockets as the key and username as the value
+        self.clients = {}       # A dictionary of clients with sockets as the key and username as the value
 
     # Adds a new client to a chatroom and notifies clients in that room
     def add_new_client_to_chatroom(self, client_name, new_socket):
         self.client_sockets.append(new_socket)
-        self.client_list[new_socket] = client_name
+        self.clients[new_socket] = client_name
         message = f"{client_name} has joined the room.\n"
         if DEBUG:
             logging.info(f'app.add_new_client_to_chatroom - {client_name} / {new_socket} has joined the room')
@@ -290,7 +288,7 @@ class Chatroom:
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_chatroom(self, client_name, client_socket):
         self.client_sockets.remove(client_socket)
-        self.client_list.pop(client_socket)
+        self.clients.pop(client_socket)
         message = f"{client_name} has left the room.\n"
         if DEBUG:
             logging.info(f'app.add_new_client_to_chatroom - {client_name} / {client_socket} has left the room')

@@ -90,11 +90,11 @@ def run_server():
             # alert new connection via the terminal
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
-            # # add user to default room
-            # APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
-            # if DEBUG:
-            #     logging.info(f'Created new chatroom {DEFAULT_ROOM_NAME}')
-            # print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
+            # add user to default room
+            APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
+            if DEBUG:
+                logging.info(f'Created new chatroom {DEFAULT_ROOM_NAME}')
+            print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
             thread = threading.Thread(target=handle, args=(client,))
@@ -105,6 +105,7 @@ def run_server():
             message = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
                 logging.info(f'Message recieved! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nMESSAGE: {message}')
+                
             # parse message
             # APP.message_parse(client, SERVER_INFO["Users"][client][1], message)
             print(message)
@@ -120,7 +121,7 @@ def handle(client):
         try:
             message = client.recv(BUFFER_MAX).decode('ascii')
 
-            # search user list ofr the username associated with this client
+            # search user list for the username associated with this client
             user_list = SERVER_INFO["Users"]
             index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
             user = SERVER_INFO["Users"][index[0]][1]
@@ -132,7 +133,7 @@ def handle(client):
 
         # case where a user disconnects
         except:
-            # search user list ofr the username associated with this client
+            # search user list for the username associated with this client
             index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
             user = SERVER_INFO["Users"][index[0]][1]
             if DEBUG:

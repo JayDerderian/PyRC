@@ -87,6 +87,7 @@ def message():
     '''
     while True:
         # this isn't great but it's working for now...
+        # make sure room name is displayed too, after selecting /join!
         try:
             message = input(f'{CLIENT_INFO["Name"]} > ')
         except KeyError:
@@ -119,6 +120,7 @@ def run_client():
     while True:
         try:
             # listen for messages from the server
+            # FORMAT 
             message = SOCKET.recv(BUFFER_MAX).decode('ascii')
             # case where it's our first connection
             if message == 'Connected to server':
@@ -150,6 +152,9 @@ def display(fg:str, bg:str, message:str):
     fg = foreground color
     bg = background color
     message = str
+
+    message format from app - f'{room.name} : {name} > {message}'
+    room name and username should be separate colors
     '''
     ...
 
