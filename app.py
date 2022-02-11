@@ -3,13 +3,13 @@ Jay Derderian
 CS 594
 
 Application module - the core functionality of the IRC Chat program.
+
 This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
 
 There is also built-in debugging functionality using logs. 
 Set DEBUG to true to turn on logging system.
 '''
-
 
 import logging
 import socket
@@ -24,30 +24,34 @@ if DEBUG:
                         format='%(asctime)s %(message)s', 
                         datefmt='%m/%d/%Y %I:%M:%S %p')
 
-DEFAULT_ROOM_NAME = '#default'
+DEFAULT_ROOM_NAME = '#main'
 
 # Broadcast a message to the server and to all clients in that room
 def message_broadcast(room, name, socket, message):
-    print(f'{room.name} : {name} > {message}', end='\r')
-
+    # Display message
+    print(f'{room.name} : {name} > {message}\n')
     # Send the message to all clients except the one that sent the messaage
     for client_socket in room.client_sockets:
         if client_socket != socket:
             try:
                 if DEBUG:
                     logging.info(f'app.message_broadcast() - sending: {room.name} : {name} > {message}')
+                '''NOTE client will need to prase to use CLI!'''
                 client_socket.send(f'{room.name} : {name} > {message}'.encode())
             except:
-                print('ERROR: Failed to send message to client!')
+                print('IRC_APP ERROR : Failed to send message to client!')
                 if DEBUG:
                     logging.debug(f'app.message_broadcast() - Failed to send message! Sender: {name}, Socket: {socket}')
 
 
 # The container that has rooms, which have lists of clients
 class IRC_Application:
+    '''
+    The main IRC application class. 
+    '''
     def __init__(self):
-        self.rooms = {}  # Create a dictionary of rooms with the room name as the key and the room object as the value
-
+        self.rooms = {}  # Create a dictionary of rooms. Key is the room_name, value is a ChatRoom() object.
+        self.users = {}  # Dictionary of current users. Key is user_name, value is a tuple(current_room, user_socket)
 
     # Function to create a space-separated list of rooms
     def list_all_rooms(self):
@@ -93,6 +97,8 @@ class IRC_Application:
                 else:
                     # if we are here then the room exists and the sender is not in it.
                     self.rooms[room_to_join].add_new_client_to_chatroom(sender_name, sender_socket)
+                    # keep track of where they are
+                    self.users[sender_name] = (room_to_join, sender_socket)
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
@@ -102,6 +108,7 @@ class IRC_Application:
             logging.info(f'app.create_room() - New room {new_room.name} created')
         self.rooms[room_to_join] = new_room
         self.rooms[room_to_join].add_new_client_to_chatroom(sender_name, sender_socket)
+        self.users[sender_name] = (room_to_join, sender_socket)
 
     # Check if the room exists, check if user is in the room,
     # remove user from room and delete room if it is empty
@@ -118,6 +125,7 @@ class IRC_Application:
             if DEBUG:
                 logging.info(f'app.leave_room() - removing {sender_name} / {sender_socket} from {room_to_leave}')
             self.rooms[room_to_leave].remove_client_from_chatroom(sender_name, sender_socket)
+            self.users[sender_name] = (DEFAULT_ROOM_NAME, sender_socket)
             if not self.rooms[room_to_leave].client_sockets:
                 self.rooms.pop(room_to_leave)
 
