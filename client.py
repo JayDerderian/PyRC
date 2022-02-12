@@ -91,9 +91,7 @@ def message():
         try:
             message = input(f'{CLIENT_INFO["Name"]} > ')
         except KeyError:
-            pass
-        if len(message) == 0: # try to merge this with the exception. need a tuple - (KeyError, EmptyList)
-            pass
+            ...
         # display local help menu
         if message.split()[0]=='/help':
             show_commands()
@@ -103,11 +101,10 @@ def message():
             if DEBUG:
                 logging.info('Disconnecting from server!')
             SOCKET.close()
-        # otherwise, send to server
-        else:
-            if DEBUG:
-                logging.info(f'Sending message: {message}')
-            SOCKET.send(message.encode('ascii'))
+        # otherwise, send to server 
+        if DEBUG:
+            logging.info(f'Sending message: {message}')
+        SOCKET.send(message.encode('ascii'))
 
 
 # main client program

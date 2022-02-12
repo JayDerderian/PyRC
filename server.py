@@ -58,8 +58,8 @@ def broadcast_to_all(message):
     NOTE: modify IRC app to do this for the room the user is in!
           this just broadcasts to *everyone*
     '''
-    for client in range(len(SERVER_INFO["Sockets"])):
-        SERVER_INFO["Sockets"][client].send(message)
+    for socket in SERVER_INFO['Sockets']:
+        socket.send(message)
 
 
 def run_server():
@@ -85,6 +85,7 @@ def run_server():
                 logging.info(f'New user - Name: {new_user},  Address:{address}')
             print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
+            # yes, i know clients are being saved twice
             SERVER_INFO["Users"].append((client, new_user))
 
             # alert new connection via the terminal
@@ -105,9 +106,6 @@ def run_server():
             message = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
                 logging.info(f'Message recieved! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nMESSAGE: {message}')
-                
-            # parse message
-            # APP.message_parse(client, SERVER_INFO["Users"][client][1], message)
             print(message)
 
 
@@ -120,34 +118,39 @@ def handle(client):
         # from an existing client
         try:
             message = client.recv(BUFFER_MAX).decode('ascii')
-
             # search user list for the username associated with this client
-            user_list = SERVER_INFO["Users"]
-            index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
-            user = SERVER_INFO["Users"][index[0]][1]
+            user = find_user(client)
             if DEBUG:
                 logging.info(f'server.hande() - Message from {user}\n Message: {message}')
-
-            # APP.message_parse(client, user, message)
-            print(f'{user}: {message}')
+            m = f'{user}: {message}'
+            print(m)
+            broadcast_to_all(m.encode('ascii'))
+            # parse message in app
+            # APP.message_parse(client, SERVER_INFO["Users"][client][1], message)
 
         # case where a user disconnects
         except:
             # search user list for the username associated with this client
-            index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
-            user = SERVER_INFO["Users"][index[0]][1]
+            user = find_user(client)
             if DEBUG:
-                logging.info(f'{SERVER_INFO["Users"][client][1]} left the server\n {str(SERVER_INFO["Sockets"].index(client))}')
-
+                logging.info(f'{user} left the server! \n{str(SERVER_INFO["Sockets"].index(client))}')
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
-  
             print(f'{user} left the server!')
             '''
             NOTE: broadcast within app to the room the user was in
             '''
             client.close()
             break
+
+
+def find_user(client):
+    '''
+    finds a user_name associated with a client socket object.
+    '''
+    user_list = SERVER_INFO["Users"]
+    index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
+    return SERVER_INFO["Users"][index[0]][1]
 
 
 # driver code
