@@ -10,7 +10,7 @@ and communicates with the server.
 
 import logging
 import socket
-import threading
+from threading import Thread
 
 from ui.ui import GUI
 from ui.cli import CLI
@@ -136,7 +136,7 @@ def run_client():
             if DEBUG:
                 logging.info('Closing connection...')
             # display('SERVER OFFLINE! Closing connection...')
-            print('\nClosing connection...')
+            print('\nSERVER OFFLINE! Closing connection...')
             SOCKET.close() 
             break
 
@@ -150,16 +150,19 @@ def display(fg:str, bg:str, message:str):
     bg = background color
     message = str
 
-    message format from app - f'{room.name} : {name} > {message}'
-    room name and username should be separate colors
+    from app.message_broadcast():
+        f'{room.name} : {name} > {message}'
+    
+    room.name and name should be separate colors
     '''
     ...
 
 
 #----------------------------------------------------------------------------#
 
-# driver code
-receive_thread = threading.Thread(target=run_client)
-write_thread = threading.Thread(target=message)
+# driver code. this uses two separate threads to run the 
+# receiving of messages and one for writing.
+receive_thread = Thread(target=run_client)
+write_thread = Thread(target=message)
 receive_thread.start()
 write_thread.start()

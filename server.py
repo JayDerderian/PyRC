@@ -92,10 +92,10 @@ def run_server():
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
             # add user to default room
-            APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
-            if DEBUG:
-                logging.info(f'Created new chatroom {DEFAULT_ROOM_NAME}')
-            print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
+            # APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
+            # if DEBUG:
+            #     logging.info(f'Created new chatroom {DEFAULT_ROOM_NAME}')
+            # print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
             thread = threading.Thread(target=handle, args=(client,))
@@ -124,7 +124,6 @@ def handle(client):
                 logging.info(f'server.hande() - Message from {user}\n Message: {message}')
             m = f'{user}: {message}'
             print(m)
-            broadcast_to_all(m.encode('ascii'))
             # parse message in app
             # APP.message_parse(client, SERVER_INFO["Users"][client][1], message)
 
@@ -132,14 +131,20 @@ def handle(client):
         except:
             # search user list for the username associated with this client
             user = find_user(client)
-            if DEBUG:
-                logging.info(f'{user} left the server! \n{str(SERVER_INFO["Sockets"].index(client))}')
+ 
+            # search for and remove user from chatroom if they disconnect
+            # for room in APP.rooms:
+            #     if client in APP.rooms[room].client_sockets:
+            #         APP.rooms[room].remove_client_from_chatroom(user, client)
+
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
-            print(f'{user} left the server!')
             '''
             NOTE: broadcast within app to the room the user was in
             '''
+            print(f'{user} left the server!')
+            if DEBUG:
+                logging.info(f'{user} left the server! \n{str(SERVER_INFO["Sockets"].index(client))}')
             client.close()
             break
 
@@ -152,6 +157,8 @@ def find_user(client):
     index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
     return SERVER_INFO["Users"][index[0]][1]
 
+
+#------------------------------------------------------------------------------------#
 
 # driver code
 if __name__ == '__main__':
