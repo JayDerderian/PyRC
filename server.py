@@ -85,17 +85,16 @@ def run_server():
                 logging.info(f'New user - Name: {new_user},  Address:{address}')
             print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
-            # yes, i know clients are being saved twice
-            SERVER_INFO["Users"].append((client, new_user))
+            SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
 
             # alert new connection via the terminal
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
             # add user to default room
-            # APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
-            # if DEBUG:
-            #     logging.info(f'Created new chatroom {DEFAULT_ROOM_NAME}')
-            # print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
+            APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
+            if DEBUG:
+                logging.info(f'Created new chatroom {DEFAULT_ROOM_NAME}')
+            print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
             thread = threading.Thread(target=handle, args=(client,))
@@ -107,6 +106,8 @@ def run_server():
             if DEBUG:
                 logging.info(f'Message recieved! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nMESSAGE: {message}')
             print(message)
+            # send to message parser
+            APP.message_parse(client, find_user(client), message)
 
 
 def handle(client):
@@ -122,29 +123,28 @@ def handle(client):
             user = find_user(client)
             if DEBUG:
                 logging.info(f'server.hande() - Message from {user}\n Message: {message}')
-            m = f'{user}: {message}'
-            print(m)
+            print(f'{user}: {message}')
             # parse message in app
-            # APP.message_parse(client, SERVER_INFO["Users"][client][1], message)
+            APP.message_parse(client, find_user(client), message)
 
         # case where a user disconnects
         except:
+            print("\n***USER DISCONNECT***")
             # search user list for the username associated with this client
             user = find_user(client)
- 
             # search for and remove user from chatroom if they disconnect
-            # for room in APP.rooms:
-            #     if client in APP.rooms[room].client_sockets:
-            #         APP.rooms[room].remove_client_from_chatroom(user, client)
+            for room in APP.rooms:
+                if client in APP.rooms[room].client_sockets:
+                    APP.rooms[room].remove_client_from_chatroom(user, client)
 
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
             '''
             NOTE: broadcast within app to the room the user was in
             '''
-            print(f'{user} left the server!')
+            print(f'{user} left the server!\n')
             if DEBUG:
-                logging.info(f'{user} left the server! \n{str(SERVER_INFO["Sockets"].index(client))}')
+                logging.info(f'{user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
             client.close()
             break
 
@@ -152,6 +152,10 @@ def handle(client):
 def find_user(client):
     '''
     finds a user_name associated with a client socket object.
+
+    client = client socket() object
+    
+    returns: user_name (str)
     '''
     user_list = SERVER_INFO["Users"]
     index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]

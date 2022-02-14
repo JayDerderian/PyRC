@@ -25,7 +25,7 @@ def message_broadcast(room, name, socket, message):
         if client_socket != socket:
             try:
                 '''NOTE client will need to parse to use CLI!'''
-                client_socket.send(f'{room} : {name} > {message}'.encode())
+                client_socket.send(f'{room} : {name} > {message}'.encode('ascii'))
             except:
                 print('IRC_APP ERROR : Failed to send message to client!')
 
@@ -41,6 +41,11 @@ class IRC_Application:
 
     # Function to create a space-separated list of rooms
     def list_all_rooms(self):
+        '''
+        returns
+        ---------
+        room_list = list[str]
+        '''
         room_list = ""
         for room in self.rooms.values():
             room_list = room_list + room.name + ' '
@@ -63,6 +68,13 @@ class IRC_Application:
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
     def join_room(self, room_to_join, sender_socket, sender_name):
+        '''
+        parameters
+        --------------
+        - room_to_join = '#room_name'
+        - sender_socket = sender socket() object
+        - sender_name = ''
+        '''
         if room_to_join[0] != '#':
             sender_socket.send("Error: Room name must begin with a '#'\n".encode())
             return
@@ -83,6 +95,13 @@ class IRC_Application:
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
     def create_room(self, room_to_join, sender_socket, sender_name):
+        '''
+        parameters
+        -------------
+        - room_to_join = '#room_name
+        - sender_socket = sender socket() object
+        - sender_name = ''
+        '''
         new_room = Chatroom(room_name=room_to_join)
         # save to instance
         self.rooms[room_to_join] = new_room
@@ -96,6 +115,12 @@ class IRC_Application:
     # Check if the room exists, check if user is in the room,
     # remove user from room and delete room if it is empty
     def leave_room(self, room_to_leave, sender_socket, sender_name):
+        '''
+        parameters
+        -------------
+        - room_to_leave = string (key for app.rooms dict)
+        - sender_socket = sender socket() objet
+        '''
         if room_to_leave not in self.rooms:
             sender_socket.send(f'Error: {room_to_leave} does not exist\n'.encode())
         elif sender_socket not in self.rooms[room_to_leave].client_sockets:
@@ -111,6 +136,14 @@ class IRC_Application:
     # Check if rooms exist, check if user is in room,
     # if room exists and user is in it then send message, otherwise skip
     def message_rooms(self, rooms_to_send, sender_socket, sender_name, message):
+        '''
+        parameters
+        ------------
+        - rooms_to_send = list[str] of '#room_name'
+        - sender_socket = sender socket() instance.
+        - sender_name = string
+        - message = string
+        '''
         for room in rooms_to_send:
             if room not in self.rooms:
                 sender_socket.send(f'Error: {room} does not exist\n'.encode())
@@ -118,14 +151,41 @@ class IRC_Application:
             if sender_socket not in self.rooms[room].client_sockets:
                 sender_socket.send(f'Error: You are not in {room}\n'.encode())
                 continue
-            message_broadcast(self.rooms[room], sender_name, sender_socket, message)
+            message_broadcast(room, sender_name, sender_socket, message)
 
     def message_parse(self, sender_socket, sender_name, message):
+        '''
+        parameters 
+        -----------
+        - sender_socket = sender socket() object
+        - sender_name = ''
+        - message = ''
+
+        splits message into individual word list and checks each element, 
+        then executes action accordingly. 
+
+        commands
+        ----------
+        - /join
+        - /leave
+        - /list
+        - /members
+        - /send
+        - /quit
+
+        NOTE: /quit and /help are handled on the client side!
+        '''
         # Case where message is not a command:
         # The message is sent to the default channel
         '''
         NOTE: Will need to coordinate with the CLI instance on the Client application!
         '''
+
+        '''TEST OUTPUT'''
+        print(f"\napp.message_parse() \nsender sock: {sender_socket} \nsender_name: {sender_name} \nmessage: {message}")
+        print(f'message as word list: {message.split()}')
+
+
         # send to default room 
         if message[0] != '/':
             message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, sender_socket, message)
@@ -219,19 +279,19 @@ class Chatroom:
 
     # Adds a new client to a chatroom and notifies clients in that room
     def add_new_client_to_chatroom(self, client_name, new_socket):
-        print(f"\nadding {client_name} to room ")
+        print(f'\nadding {client_name} to {self.name}')
         self.client_sockets.append(new_socket)
         self.clients[client_name] = new_socket
         message = f"{client_name} has joined the room!\n"
-        message_broadcast(self.name, client_name, new_socket, message)
+        message_broadcast(self, client_name, new_socket, message)
 
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_chatroom(self, client_name, client_socket):
-        print(f"\nremoving {client_name} from room ")
+        print(f'\nremoving {client_name} from {self.name} ')
         self.client_sockets.remove(client_socket)
-        self.clients.pop(client_socket)
+        self.clients.pop(client_name)
         message = f"{client_name} has left the room!\n"
-        message_broadcast(self.name, client_name, client_socket, message)
+        message_broadcast(self, client_name, client_socket, message)
 
     # returns a list of current users in this room as a string.
     def list_clients_in_room(self):

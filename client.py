@@ -86,12 +86,8 @@ def message():
     handles client messages
     '''
     while True:
-        # this isn't great but it's working for now...
-        # make sure room name is displayed too, after selecting /join!
-        try:
-            message = input(f'{CLIENT_INFO["Name"]} > ')
-        except KeyError:
-            ...
+        # get message from user
+        message = input(f'{CLIENT_INFO["Name"]} > ')
         # display local help menu
         if message.split()[0]=='/help':
             show_commands()
