@@ -87,7 +87,7 @@ def message():
     '''
     while True:
         # get message from user
-        message = input(f'{CLIENT_INFO["Name"]} > ')
+        message = input(' > ')
         # display local help menu
         if message.split()[0]=='/help':
             show_commands()
@@ -98,9 +98,11 @@ def message():
                 logging.info('Disconnecting from server!')
             SOCKET.close()
         # otherwise, send to server 
+        else:
+            SOCKET.send(message.encode('ascii'))
         if DEBUG:
             logging.info(f'Sending message: {message}')
-        SOCKET.send(message.encode('ascii'))
+
 
 
 # main client program

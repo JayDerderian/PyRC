@@ -6,7 +6,7 @@ Server module. Also runs main IRC application (app.py).
 '''
 import logging
 import socket
-import threading
+from threading import Thread
 
 from app import IRC_Application, Chatroom
 
@@ -90,14 +90,13 @@ def run_server():
             # alert new connection via the terminal
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
-            # add user to default room
+            # add user to default room and update user dict
             APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
-            if DEBUG:
-                logging.info(f'Created new chatroom {DEFAULT_ROOM_NAME}')
+            APP.users[new_user] = (APP.rooms[DEFAULT_ROOM_NAME], client)
             print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
-            thread = threading.Thread(target=handle, args=(client,))
+            thread = Thread(target=handle, args=(client,))
             thread.start()
 
         # message from existing user
@@ -122,7 +121,8 @@ def handle(client):
             # search user list for the username associated with this client
             user = find_user(client)
             if DEBUG:
-                logging.info(f'server.hande() - Message from {user}\n Message: {message}')
+                logging.info(f'server.handle() - Message from user:{user} \nMessage: {message}')
+            
             print(f'{user}: {message}')
             # parse message in app
             APP.message_parse(client, find_user(client), message)
@@ -132,20 +132,21 @@ def handle(client):
             print("\n***USER DISCONNECT***")
             # search user list for the username associated with this client
             user = find_user(client)
+            if DEBUG:
+                logging.info(f'server.handle() - {user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
+            
             # search for and remove user from chatroom if they disconnect
             for room in APP.rooms:
                 if client in APP.rooms[room].client_sockets:
                     APP.rooms[room].remove_client_from_chatroom(user, client)
-
+            # remove user from APP's active user dictionary
+            del APP.users[user]
+            # remove user info from SERVER_INFO instance, and close socket
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
-            '''
-            NOTE: broadcast within app to the room the user was in
-            '''
-            print(f'{user} left the server!\n')
-            if DEBUG:
-                logging.info(f'{user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
             client.close()
+
+            print(f'{user} left the server!\n')
             break
 
 
@@ -153,7 +154,7 @@ def find_user(client):
     '''
     finds a user_name associated with a client socket object.
 
-    client = client socket() object
+    - client = client socket() object
     
     returns: user_name (str)
     '''
