@@ -29,7 +29,7 @@ UI = GUI()
 CLIENT_INFO = {
     "Name": '',       # client user name
     "Address": ADDR,  # (host, port)
-    "Messages": []    # messsages sent during session
+    "Server": ''      # connected server info
 }
 
 # Debugging stuff. Set DEBUG to true to activate logging.
@@ -64,7 +64,7 @@ try:
 except:
     print('...Could not connect!')
     if DEBUG:
-        logging.info(f'Could not connect to server!')
+        logging.info(f'Could not connect to server! \nSocket: {SOCKET}')
     SOCKET.close()
 
 
@@ -86,8 +86,14 @@ def message():
     handles client messages
     '''
     while True:
+        '''
+        NOTE: should display current room here. messages should by default
+        go to the room the user is currently in, rather than having to specify
+        it via command line syntax, unless joining, leaving, or listing members
+        in that room.
+        '''
         # get message from user
-        message = input(' > ')
+        message = input(f'{CLIENT_INFO["Name"]} > ')
         # display local help menu
         if message.split()[0]=='/help':
             show_commands()
@@ -97,12 +103,10 @@ def message():
             if DEBUG:
                 logging.info('Disconnecting from server!')
             SOCKET.close()
-        # otherwise, send to server 
         else:
             SOCKET.send(message.encode('ascii'))
         if DEBUG:
             logging.info(f'Sending message: {message}')
-
 
 
 # main client program
@@ -115,7 +119,7 @@ def run_client():
     while True:
         try:
             # listen for messages from the server
-            # FORMAT 
+            # FORMAT <user_name> #room_name : <message>
             message = SOCKET.recv(BUFFER_MAX).decode('ascii')
             # case where it's our first connection
             if message == 'Connected to server':
@@ -152,6 +156,11 @@ def display(fg:str, bg:str, message:str):
         f'{room.name} : {name} > {message}'
     
     room.name and name should be separate colors
+
+    room = message.split()[0]
+    user_name = message.split()[1]
+    col = message.split()[2]
+    mes = message.split()[3]
     '''
     ...
 

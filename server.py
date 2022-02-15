@@ -91,9 +91,9 @@ def run_server():
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
             # add user to default room and update user dict
-            APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
-            APP.users[new_user] = (APP.rooms[DEFAULT_ROOM_NAME], client)
-            print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
+            # APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
+            # APP.users[new_user] = (APP.rooms[DEFAULT_ROOM_NAME], client)
+            # print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
             thread = Thread(target=handle, args=(client,))
@@ -125,7 +125,7 @@ def handle(client):
             
             print(f'{user}: {message}')
             # parse message in app
-            APP.message_parse(client, find_user(client), message)
+            # APP.message_parse(client, find_user(client), message)
 
         # case where a user disconnects
         except:
@@ -136,11 +136,11 @@ def handle(client):
                 logging.info(f'server.handle() - {user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
             
             # search for and remove user from chatroom if they disconnect
-            for room in APP.rooms:
-                if client in APP.rooms[room].client_sockets:
-                    APP.rooms[room].remove_client_from_chatroom(user, client)
-            # remove user from APP's active user dictionary
-            del APP.users[user]
+            # for room in APP.rooms:
+            #     if client in APP.rooms[room].client_sockets:
+            #         APP.rooms[room].remove_client_from_chatroom(user, client)
+            # # remove user from APP's active user dictionary
+            # del APP.users[user]
             # remove user info from SERVER_INFO instance, and close socket
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
