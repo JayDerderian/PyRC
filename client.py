@@ -31,6 +31,7 @@ CLIENT_INFO = {
     "Address": ADDR,  # (host, port)
     "Server": ''      # connected server info
 }
+CURRENT_ROOM = '#lobby'
 
 # Debugging stuff. Set DEBUG to true to activate logging.
 DEBUG = False
@@ -88,14 +89,15 @@ def message():
     while True:
         '''
         NOTE: should display current room here. messages should by default
-        go to the room the user is currently in, rather than having to specify
-        it via command line syntax, unless joining, leaving, or listing members
-        in that room.
+              go to the room the user is currently in, rather than having to specify
+              it via command line syntax, unless joining, leaving, or listing members
+              in that room.
         '''
         # get message from user. 
         '''
         NOTE: display() will provide a wrapper where when it's ready'''
-        message = input(f'{CLIENT_INFO["Name"]} > ')
+        # CURRENT_ROOM = APP.get_current_room(CLIENT_INFO["Name"])
+        message = input(f'{CURRENT_ROOM} {CLIENT_INFO["Name"]} > ')
 
         # display local help menu
         if message.split()[0]=='/help':
@@ -167,7 +169,7 @@ def display(fg, bg, message):
     - message = message string
 
     NOTE gets messages from the server in the format:
-    {sender_name} {room.name} > {message}
+    {room.name} {sender_name} > {message}
     
     sender_name and room.name should be separate colors
     '''

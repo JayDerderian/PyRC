@@ -18,7 +18,8 @@ BUFFER_MAX = 2048
 CLIENT_MAX = 10
 DEFAULT_ROOM_NAME = '#lobby'
 
-APP = IRC_App()     # Application instance. #lobby room is present by default.
+# Application instance. #lobby room is present by default.
+APP = IRC_App(debug=True)     
 
 SERVER_INFO = {
     "Sockets": [],  # list of client_socket objects
@@ -161,6 +162,16 @@ def find_user(client):
     user_list = SERVER_INFO["Users"]
     index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
     return SERVER_INFO["Users"][index[0]][1]
+
+
+def find_socket(user_name):
+    '''
+    finds an associated socket with this user name
+    returns a socket() object
+    '''
+    socket_list = SERVER_INFO["Sockets"]
+    index = [i for i, socket_list in enumerate(socket_list) if socket_list[0] == find_user(user_name)]
+    return SERVER_INFO["Sockets"][index[0]][1]
 
 
 #------------------------------------------------------------------------------------#
