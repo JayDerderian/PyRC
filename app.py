@@ -11,13 +11,11 @@ There is also built-in debugging functionality using logs.
 Set DEBUG to true to turn on logging system.
 '''
 
-import socket
-
 # Constants
 DEFAULT_ROOM_NAME = '#lobby'
 
 # Broadcast a message to the server and to all clients in that room
-def message_broadcast(room, name, socket, message):
+def message_broadcast(room, sender_name, message, sender_socket):
     '''
     sends a message to all the users in a Chatroom() instance
 
@@ -29,28 +27,32 @@ def message_broadcast(room, name, socket, message):
     - message = message string
     '''
     # Display message
-    print(f'{room.name} : {name} > {message}\n')
+    print(f'{sender_name} {room.name} > {message}\n')
     # Send the message to all clients in this room *except* the one that sent the messaage
-    for client_socket in room.client_sockets:
-        if client_socket != socket:
-            try:
-                '''NOTE client will need to parse to use CLI!'''
-                client_socket.send(f'{room.name} : {name} > {message}'.encode('ascii'))
-            except:
-                print('IRC_APP ERROR : Failed to send message to client!')
+    for client in room.clients:
+        if room.clients[client] != sender_socket:
+            client.send(f'{sender_name} {room.name} > {message}'.encode('ascii'))
+        else:
+            continue
 
 
 # The container that has rooms, which have lists of clients
 class IRC_App:
     '''
-    The main IRC application class. 
+    The main IRC application. One default room - #lobby - is created when
+    this class is instantiated. Irc_App() also keeps tracks of current users 
+    and their socket info.
+
+    Irc_App().message_parser(message:str) is the main point of entry for this
+    application. All message strings recieved from the client should be sent 
+    through here.
     '''
     def __init__(self):
         # Dictionary of active rooms. Key is room name, value is the Chatroom() object. 
-        # Users can be found by searching each room via their names. Each room has a list
-        # of active clients.
-        self.rooms = {}  
-        # List of active users (User() objects).
+        # This is initiated with a default #lobby room
+        self.rooms = {}
+        self.rooms[DEFAULT_ROOM_NAME] = Chatroom(room_name=DEFAULT_ROOM_NAME)  
+        # Dictionary of active users (User() objects). Key is username, value is User() object
         self.users = {}
 
     # add a new user to the instance
@@ -67,6 +69,16 @@ class IRC_App:
             del self.users[user_name]
         else:
             print(f'{user_name} is not in the server!')
+    
+    # get a list of all active users
+    def get_all_users(self):
+        '''
+        returns a list[str] of all active users in the instance.
+
+        NOTE: Users can be found by searching each room via their names. Each room has a list
+              of active clients. 
+        '''
+        ...
 
     # Function to create a space-separated list of rooms
     def list_all_rooms(self):
@@ -171,17 +183,26 @@ class IRC_App:
             else:
                 message_broadcast(room, sender_name, sender_socket, message)
 
-
+    # main message parser.
     def message_parser(self, message, sender_name, sender_socket):
         '''
         top-level entry for client messages to the application. 
-        message strings are split into word lists, then parsed accordingly.
 
         parameters 
         -----------
         - sender_socket = sender socket() object
         - sender_name = ''
         - message = ''
+
+        message strings are split into word lists, then parsed accordingly.
+
+        messages should, by default, go out the room the user is currently in.
+        no need for a #room_name specification. typical syntax should be:
+
+        user_name #room > <message>
+
+        #lobby is the default room that any user can be in at any given time, 
+        and is the one new users are sent to by default.
 
         splits message into individual word list and checks each element, 
         then executes action accordingly. 
@@ -203,18 +224,19 @@ class IRC_App:
             - block DM's from other users
         - /unblock <user>
             - unblocks a user
+        - /help
+            - displays a list of available commands
         - /quit
+            - leave current instance.
 
         NOTE: /quit and /help are handled on the client side!
+
         NOTE: maybe simplify so we don't have to use /send to send a message to the current room?
               just have the current room displayed next to the user_name then send to all members in that room
-              want to reduce the amount of commands per operation. 
-        '''
-        # Case where message is not a command:
-        # The message is sent to the default channel
-        '''
+
         NOTE: Will need to coordinate with the CLI instance on the Client application!
         '''
+        
         '''TEST OUTPUT'''
         print(f"\napp.message_parse() \nsender sock: {sender_socket} \nsender_name: {sender_name} \nmessage: {message}")
         print(f'message as word list: {message.split()}')
@@ -257,19 +279,17 @@ class IRC_App:
         # Case where user wants to directly message another user    
         # elif message.split()[0] == "/message":
 
+
         # Case where user wants to block DM's from another user
-        # elif message.split()[0] == "/block"
+        # elif message.split()[0] == "/block":
+
 
         # Case where user wants to un-block another user.
-        # elif message.split()[] == "/unblock"
+        # elif message.split()[] == "/unblock":
 
 
 class Chatroom:
-    '''
-    NOTE. create a self.text_color field to display all text for this
-          chatroom in a specific color.
-    '''
-    # Give a Chatroom a name and list of client's sockets in this room 
+
     def __init__(self, room_name, text_color=None):
         self.name = room_name
         self.text_color = text_color
@@ -305,7 +325,15 @@ class User:
     
     def dm(self, sender, message):
         '''
-        ability to recieve DM's from another user
+        ability to recieve DM's from another user.
+        if the user isn't blocked, then the message will be saved to self.dms
+        with the senders name as the key
+        '''
+        ...
+    
+    def read_dms(self):
+        '''
+        displays messages from other users. 
         '''
         ...
 

@@ -92,19 +92,24 @@ def message():
         it via command line syntax, unless joining, leaving, or listing members
         in that room.
         '''
-        # get message from user
+        # get message from user. 
+        '''
+        NOTE: display() will provide a wrapper where when it's ready'''
         message = input(f'{CLIENT_INFO["Name"]} > ')
+
         # display local help menu
         if message.split()[0]=='/help':
             show_commands()
-        # exit
+        # disconnect from server and exit application.
         elif message.split()[0] == '/quit':
             print('\n***Disconnecting!***')
             if DEBUG:
                 logging.info('Disconnecting from server!')
             SOCKET.close()
+        # send to server
         else:
             SOCKET.send(message.encode('ascii'))
+
         if DEBUG:
             logging.info(f'Sending message: {message}')
 
@@ -114,12 +119,18 @@ def run_client():
     '''
     main client method for application. 
     handles message I/O and shuts down if a server disconnects.
+
+    NOTE gets messages from the server in the format:
+    {sender_name} {room.name} > {message}
+
+    use room.name to attach to input prompt string in message() somehow????
+    they're running in separate threads!
     '''
     # main communication loop
     while True:
+        # case where we get a message from the server
         try:
             # listen for messages from the server
-            # FORMAT <user_name> #room_name : <message>
             message = SOCKET.recv(BUFFER_MAX).decode('ascii')
             # case where it's our first connection
             if message == 'Connected to server':
@@ -130,9 +141,10 @@ def run_client():
             # otherwise its some other message
             else:
                 if DEBUG:
-                    logging.info(f'Received a message: {message}')
+                    logging.info(f'{message}')
                 # display(message)
                 print(message)
+
         # case where the server shuts down
         except:
             if DEBUG:
@@ -144,23 +156,20 @@ def run_client():
 
 
 # message parser to use with CLI
-def display(fg:str, bg:str, message:str):
+def display(fg, bg, message):
     '''
     this parses a message string and applies the CLI to individual elements.
 
-    fg = foreground color
-    bg = background color
-    message = str
+    parameters
+    ------------
+    - fg = foreground color
+    - bg = background color
+    - message = message string
 
-    from app.message_broadcast():
-        f'{room.name} : {name} > {message}'
+    NOTE gets messages from the server in the format:
+    {sender_name} {room.name} > {message}
     
-    room.name and name should be separate colors
-
-    room = message.split()[0]
-    user_name = message.split()[1]
-    col = message.split()[2]
-    mes = message.split()[3]
+    sender_name and room.name should be separate colors
     '''
     ...
 

@@ -8,7 +8,7 @@ import logging
 import socket
 from threading import Thread
 
-from app import IRC_Application, Chatroom
+from app import IRC_App
 
 # Constants
 HOST = socket.gethostname()
@@ -16,7 +16,9 @@ PORT = 5050
 ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
 CLIENT_MAX = 10
-DEFAULT_ROOM_NAME = '#main'
+DEFAULT_ROOM_NAME = '#lobby'
+
+APP = IRC_App()     # Application instance. #lobby room is present by default.
 
 SERVER_INFO = {
     "Sockets": [],  # list of client_socket objects
@@ -32,11 +34,6 @@ if DEBUG:
                         level=logging.DEBUG, 
                         format='%(asctime)s %(message)s', 
                         datefmt='%m/%d/%Y %I:%M:%S %p')
-
-# Application and Chatroom instances
-APP = IRC_Application()
-default_room = Chatroom(room_name=DEFAULT_ROOM_NAME)
-APP.rooms[DEFAULT_ROOM_NAME] = default_room
 
 #-------------------------START UP----------------------------------#
 
@@ -105,8 +102,9 @@ def run_server():
             if DEBUG:
                 logging.info(f'Message recieved! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nMESSAGE: {message}')
             print(message)
+
             # send to message parser
-            APP.message_parse(client, find_user(client), message)
+            # APP.message_parse(client, find_user(client), message)
 
 
 def handle(client):
@@ -124,6 +122,7 @@ def handle(client):
                 logging.info(f'server.handle() - Message from user:{user} \nMessage: {message}')
             
             print(f'{user}: {message}')
+
             # parse message in app
             # APP.message_parse(client, find_user(client), message)
 
@@ -141,6 +140,7 @@ def handle(client):
             #         APP.rooms[room].remove_client_from_chatroom(user, client)
             # # remove user from APP's active user dictionary
             # del APP.users[user]
+
             # remove user info from SERVER_INFO instance, and close socket
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
