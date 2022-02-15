@@ -11,29 +11,27 @@ There is also built-in debugging functionality using logs.
 Set DEBUG to true to turn on logging system.
 '''
 
-# Constants
+
 DEFAULT_ROOM_NAME = '#lobby'
 
-# Broadcast a message to the server and to all clients in that room
-def message_broadcast(room, sender_name, message, sender_socket):
+# Broadcast a message to all clients in a given room
+def message_broadcast(room, sender_name, message):
     '''
     sends a message to all the users in a Chatroom() instance
 
     parameters
     -----------
     - room = Chatroom() object
-    - name = senders name (str)
-    - socket = sender's socket (socket() object)
+    - sender_name = senders name (str)
     - message = message string
+    - sender_socket = sender's socket() object
     '''
     # Display message
     print(f'{sender_name} {room.name} > {message}\n')
     # Send the message to all clients in this room *except* the one that sent the messaage
     for client in room.clients:
-        if room.clients[client] != sender_socket:
-            client.send(f'{sender_name} {room.name} > {message}'.encode('ascii'))
-        else:
-            continue
+        if room.clients[client] != sender_name:
+            room.clients[client].send(f'{sender_name} {room.name} > {message}'.encode('ascii'))
 
 
 # The container that has rooms, which have lists of clients
@@ -47,12 +45,15 @@ class IRC_App:
     application. All message strings recieved from the client should be sent 
     through here.
     '''
-    def __init__(self):
+    def __init__(self, debug=False):
+        # Debuggin' stuff
+        self.debug = debug
         # Dictionary of active rooms. Key is room name, value is the Chatroom() object. 
-        # This is initiated with a default #lobby room
+        # #lobby room is always present by default, even if its empty.
         self.rooms = {}
         self.rooms[DEFAULT_ROOM_NAME] = Chatroom(room_name=DEFAULT_ROOM_NAME)  
-        # Dictionary of active users (User() objects). Key is username, value is User() object
+        # Dictionary of active users
+        # Key is username, value is User() object
         self.users = {}
 
     # add a new user to the instance
@@ -74,13 +75,10 @@ class IRC_App:
     def get_all_users(self):
         '''
         returns a list[str] of all active users in the instance.
-
-        NOTE: Users can be found by searching each room via their names. Each room has a list
-              of active clients. 
         '''
-        ...
+        return list(self.users.keys())
 
-    # Function to create a space-separated list of rooms
+    # returns a list of active rooms
     def list_all_rooms(self):
         '''
         returns a list of all active rooms.
@@ -89,76 +87,88 @@ class IRC_App:
         '''
         return list(self.rooms.keys())
     
-
-    def show_current_room(self, user_name, room):
-        '''
-        display name of current room
-        '''
-        ...
     
-    def show_connection_info(self, user_name):
+    def get_connection_info(self, user_name):
         '''
         show current client's name, and socket info.
+        returns a tuple with the user_name and socket() object
         '''
-        ...
+        if user_name in self.users.keys():
+            return (user_name, self.users[user_name])
+        else:
+            print(f'{user_name} not in instance!')
 
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
     def join_room(self, room_to_join, sender_name, sender_socket):
         '''
+        join or create a new Chatroom() instance
+
         parameters
         --------------
         - room_to_join = '#room_name'
         - sender_socket = sender socket() object
         - sender_name = ''
         '''
-        ...
+        # Case where this room doesn't already exist
+        if room_to_join not in self.rooms.keys():
+            print(f'Creating and joining {room_to_join}...')
+            self.create_room(room_to_join, sender_name, sender_socket)
+        # Case where it DOES already exist
+        else:
+            print(f'Joining {room_to_join}...')
+            self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
     def create_room(self, room_to_join, sender_name, sender_socket):
         '''
+        creates a new Chatroom() instance.
+
         parameters
         -------------
         - room_to_join = '#room_name
         - sender_socket = sender socket() object
         - sender_name = ''
         '''
-        # create new Chatroom() instance
-        new_room = Chatroom(room_name=room_to_join)
-        # save to IRC_App instance
-        self.rooms[room_to_join] = new_room
-        self.rooms[room_to_join].add_new_client_to_chatroom(sender_name, sender_socket)
-        # save info to Chatroom() instance
-        new_room.client_sockets.append(sender_socket)
-        new_room.clients[sender_name] = sender_socket
+        self.rooms[room_to_join] = Chatroom(room_name=room_to_join)
+        self.rooms[room_to_join].add_new_client_to_room(sender_name, sender_socket)
 
     # Check if the room exists, check if user is in the room,
     # remove user from room and delete room if it is empty
     def leave_room(self, room_to_leave, sender_name, sender_socket):
         '''
+        leave a Chatroom() instance. will remove room if it's empty.
+
         parameters
         -------------
         - room_to_leave = '' (key for app.rooms dict)
         - sender_socket = sender socket() objet
         - sender_name = ''
         '''
-        if room_to_leave not in self.rooms:
+        # case where room doesn't exist
+        if room_to_leave not in self.rooms.keys():
             sender_socket.send(f'Error: {room_to_leave} does not exist\n'.encode())
-        elif sender_socket not in self.rooms[room_to_leave].client_sockets:
+        # case where the user isn't in that room
+        elif sender_name not in self.rooms[room_to_leave].clients.keys():
             sender_socket.send(f'Error: You are not in {room_to_leave}\n'.encode())
+        # otherwise leave
         else:
-            self.rooms[room_to_leave].remove_client_from_chatroom(sender_name, sender_socket)
-            # update user's location. 
-            self.users[sender_name] = (DEFAULT_ROOM_NAME, sender_socket)
-            # remove the room if it's empty
-            if not self.rooms[room_to_leave].client_sockets:
-                self.rooms.pop(room_to_leave)
+            self.rooms[room_to_leave].remove_client_from_room(sender_name, sender_socket)
+            # remove the room if it's empty.
+            if len(self.rooms[room_to_leave].clients) == 0:
+                # make sure we don't accidentally delete the default room!
+                if room_to_leave != DEFAULT_ROOM_NAME:
+                    del self.rooms[room_to_leave]
+            # send user back to #lobby
+            self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
 
     # Check if rooms exist, check if user is in room,
     # if room exists and user is in it then send message, otherwise skip
-    def message_room(self, rooms_to_send, sender_socket, sender_name, message):
+    def message_rooms(self, rooms_to_send, sender_name, message, sender_socket):
         '''
+        send a message to a chatroom or list of chatrooms (assuming they exist)
+
         parameters
         ------------
         - rooms_to_send = list[str] of '#room_name' or single room name (str)
@@ -166,7 +176,17 @@ class IRC_App:
         - sender_name = string
         - message = string
         '''
-        if type(rooms_to_send) == list:
+        # case where we want to send to a single room
+        if type(rooms_to_send) == str:
+            if rooms_to_send not in self.rooms.keys():
+                sender_socket.send(f'Error: {rooms_to_send} does not exist\n'.encode())
+            if sender_socket not in self.rooms[rooms_to_send].client_sockets:
+                sender_socket.send(f'Error: You are not in {rooms_to_send}\n'.encode())
+            else:
+                message_broadcast(self.rooms[rooms_to_send], sender_name, message, sender_socket)
+
+        # case where we want to message a series of rooms
+        elif type(rooms_to_send) == list:
             for room in rooms_to_send:
                 if room not in self.rooms:
                     sender_socket.send(f'Error: {room} does not exist\n'.encode())
@@ -174,14 +194,7 @@ class IRC_App:
                 if sender_socket not in self.rooms[room].client_sockets:
                     sender_socket.send(f'Error: You are not in {room}\n'.encode())
                     continue
-                message_broadcast(room, sender_name, sender_socket, message)
-        elif type(rooms_to_send) == str:
-            if rooms_to_send not in self.rooms.keys():
-                sender_socket.send(f'Error: {room} does not exist\n'.encode())
-            if sender_socket not in self.rooms[rooms_to_send].client_sockets:
-                sender_socket.send(f'Error: You are not in {room}\n'.encode())
-            else:
-                message_broadcast(room, sender_name, sender_socket, message)
+                message_broadcast(self.rooms[room], sender_name, message, sender_socket)
 
     # main message parser.
     def message_parser(self, message, sender_name, sender_socket):
@@ -290,23 +303,26 @@ class IRC_App:
 
 class Chatroom:
 
-    def __init__(self, room_name, text_color=None):
+    def __init__(self, room_name):
         self.name = room_name
-        self.text_color = text_color
-        # A dictionary of clients with username as the key and the socket as the value 
-        self.clients = {}  
+        self.clients = {}  # A dictionary of clients with username as the key 
+                           # and their socket() object as the value 
 
     # Adds a new client to a chatroom and notifies clients in that room
     def add_new_client_to_room(self, client_name, new_socket):
         print(f'\nadding {client_name} to {self.name}')
+
         self.clients[client_name] = new_socket
+        
         message = f"{client_name} has joined the room!\n"
         message_broadcast(self, client_name, new_socket, message)
 
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_room(self, client_name, client_socket):
         print(f'\nremoving {client_name} from {self.name}')
+
         self.clients.pop(client_name)
+
         message = f"{client_name} has left the room!\n"
         message_broadcast(self, client_name, client_socket, message)
 
