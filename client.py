@@ -27,9 +27,9 @@ TEXT_UI = CLI()
 UI = GUI()
 
 CLIENT_INFO = {
-    "Name": '',       # client user name
-    "Address": ADDR,  # (host, port)
-    "Server": ''      # connected server info
+    "Name": '',          # client user name
+    "Address": ADDR,     # (host, port)
+    "Current Room": ''   # current room. used for simplifying commands.
 }
 CURRENT_ROOM = '#lobby'
 
@@ -87,17 +87,11 @@ def message():
     handles client messages
     '''
     while True:
-        '''
-        NOTE: should display current room here. messages should by default
-              go to the room the user is currently in, rather than having to specify
-              it via command line syntax, unless joining, leaving, or listing members
-              in that room.
-        '''
         # get message from user. 
         '''
         NOTE: display() will provide a wrapper where when it's ready'''
-        # CURRENT_ROOM = APP.get_current_room(CLIENT_INFO["Name"])
-        message = input(f'{CURRENT_ROOM} {CLIENT_INFO["Name"]} > ')
+        message = message = input(f'{CLIENT_INFO["Current Room"]} {CLIENT_INFO["Name"]} > ')
+        # message = input(f'{CLIENT_INFO["Name"]} > ')
 
         # display local help menu
         if message.split()[0]=='/help':
@@ -121,12 +115,6 @@ def run_client():
     '''
     main client method for application. 
     handles message I/O and shuts down if a server disconnects.
-
-    NOTE gets messages from the server in the format:
-    {sender_name} {room.name} > {message}
-
-    use room.name to attach to input prompt string in message() somehow????
-    they're running in separate threads!
     '''
     # main communication loop
     while True:
@@ -144,6 +132,11 @@ def run_client():
             else:
                 if DEBUG:
                     logging.info(f'{CLIENT_INFO["Name"]}: \n{message}')
+                # user must be in same room as any other client to talk to them,
+                # so we save the room info from the message to aid with the
+                # input prompt. Try to only do this when we need to. 
+                if message.split()[0] != CLIENT_INFO['Current Room']:
+                    CLIENT_INFO["Current Room"] = message.split()[0]
                 # display(message)
                 print(message)
 
@@ -158,22 +151,15 @@ def run_client():
 
 
 # message parser to use with CLI
-def display(fg, bg, message):
+def display(message):
     '''
     this parses a message string and applies the CLI to individual elements.
 
     parameters
     ------------
-    - fg = foreground color
-    - bg = background color
     - message = message string
-
-    NOTE gets messages from the server in the format:
-    {room.name} {sender_name} > {message}
-    
-    sender_name and room.name should be separate colors
     '''
-    ...
+    return TEXT_UI.add_colors(message)
 
 
 #----------------------------------------------------------------------------#

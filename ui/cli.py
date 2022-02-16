@@ -3,6 +3,7 @@ Jay Derderian
 CS 594
 
 This module handles the cli for this application. 
+Randomly assigns a font color and background color for a chatroom.
 
 NOTE:
     read these:
@@ -62,21 +63,26 @@ from termcolor import (
 class CLI:
     '''
     import and instantiate this class to use foreground and background
-    colors in the terminal while using the IRC application. 
+    colors in the terminal. 
 
     made using ANSI Escape Sequence color constants and the termcolor module
+
+    MAY NOT WORK IN ALL TERMINALS. Depends on whether the OS has ANSI enabled, I think.
     '''
     def __init__(self, debug=False):
         
         self.debug = debug
 
-        self.reset = '\033[0m'
-        self.bold = '\033[01m'
-        self.disable = '\033[02m'
-        self.underline = '\033[04m'
-        self.reverse = '\033[07m'
-        self.strikethrough = '\033[09m'
-        self.invisible = '\033[08m'
+        # text functionality
+        self.alts = {
+            'reset': '\033[0m',
+            'bold': '\033[01m',
+            'disable': '\033[02m',
+            'underline': '\033[04m',
+            'reverse': '\033[07m',
+            'strikethrough': '\033[09m',
+            'invisible': '\033[08m'
+        }
     
         # foreground colors
         self.fg = {
@@ -117,16 +123,13 @@ class CLI:
         print('\n', text2art(text='HELLO', font=f))
         print(f'\nFONT: {f}\n')
         
-
-
     ## FANCY STUFF ##
 
     def rainbow_word(self, word):
         '''
         prints a word out letter by letter each with an individual color
         '''
-        ...
-
+        letters = word.split()
 
     ## CLIENT UI ##
 
@@ -145,7 +148,6 @@ class CLI:
             else:
                 raise TypeError('font name must be a string!')
         return tprint(f'{app_name}')
-
 
     def app_info(self, info:dict):
         '''
@@ -166,17 +168,18 @@ class CLI:
         for line in menu:
             print(text2art(menu[line], font='tiny2'))
 
-
     ## APP UI ##
-    
-    def input_prompt(self, name):
-        stdout.write(f'{Fore.LIGHTBLUE_EX}{name} > ')
-        stdout.flush()
-    
-    def room_list(self, rooms):
-        ...
-    
-    def user_list(self, users):
+
+    def add_colors(self, message):
+        '''
+        add color to #room_name, text color to message text and
+        a background color as well. 
+
+        NOTE gets messages from the server in the format:
+        {room.name} {sender_name} > {message}
+        '''
+        # break message apart, parse for #room name and message text.
+        # add colors accordingly. 
         ...
     
     def error_messages(self, errors):

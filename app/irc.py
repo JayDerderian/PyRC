@@ -6,18 +6,6 @@ Application module - the core functionality of the IRC Chat program.
 
 This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
-
-There is also built-in debugging functionality using logs. 
-Set DEBUG to true to turn on logging system.
-'''
-
-'''
-TODO:
-    Make sure User() and Chatroom() dont have their own copies of message_broadcast()
-    Have add/remove/whatever functions return strings to broadcast, and have
-    message_broadcast() be called here.
-
-    ex: message_broadcase(User.remove_user(username).encode('ascii'))
 '''
 
 from user import User
@@ -59,7 +47,8 @@ class IRC_App:
     def __init__(self, debug=False):
         # Debuggin' stuff
         self.debug = debug
-        # Dictionary of active rooms. Key is room name, value is the Chatroom() object. 
+        # Dictionary of active rooms. 
+        # Key is room name (str), value is the Chatroom() object. 
         # #lobby room is always present by default, even if its empty.
         self.rooms = {}
         self.rooms[DEFAULT_ROOM_NAME] = Chatroom(room_name=DEFAULT_ROOM_NAME)  
@@ -186,7 +175,7 @@ class IRC_App:
             message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, message)
 
     # directly message another user
-    def dm_user(self, sender, message, receiver):
+    def send_dm(self, sender, message, receiver):
         '''
         directly message another user. 
         wont send message if sender has been blocked by receiver!
@@ -208,10 +197,32 @@ class IRC_App:
         if user.has_blocked(sender):
             print(f'{sender} has been blocked by {receiver}!')
         else:
-            # save message to User() instance
+            # save message to User() instance. 
+            # User() will send message via the user's socket.
             user.get_dm(sender, message)
 
-    # Check if rooms exist, check if user is in room,
+    def get_dm(self, receiver, sender=None):
+        '''
+        gets a user's direct messages. works with the User() object.
+        this also sends the 
+
+        parameters
+        ------------
+        receiver = '' (user requesting dms)
+        sender = None (set to user_name string if user wants 
+                      dms from a specific user)
+        '''
+        # find receiver
+        for u in self.users:
+            if u == receiver:
+                user = self.users[receiver]
+                break
+        if sender is None:
+            return user.read_all_dms()
+        else:
+            return user.read_dms(sender)
+
+    # Check if rooms exist, check if user is in the room,
     # if room exists and user is in it then send message, otherwise skip
     def message_rooms(self, rooms_to_send, sender_name, message, sender_socket):
         '''
@@ -226,9 +237,11 @@ class IRC_App:
         '''
         # case where we want to send to a single room
         if type(rooms_to_send) == str:
+            # does the room exist?
             if rooms_to_send not in self.rooms.keys():
                 sender_socket.send(f'Error: {rooms_to_send} does not exist!'.encode())
-            if sender_socket not in self.rooms[rooms_to_send].client_sockets:
+            # check if the sender is in the room.
+            if sender_name not in self.rooms[rooms_to_send].clients.keys():
                 sender_socket.send(f'Error: You are not in {rooms_to_send}!'.encode())
             else:
                 message_broadcast(self.rooms[rooms_to_send], sender_name, message, sender_socket)
@@ -236,10 +249,12 @@ class IRC_App:
         # case where we want to message a series of rooms
         elif type(rooms_to_send) == list:
             for room in rooms_to_send:
-                if room not in self.rooms:
+                # does the room exist?
+                if room not in self.rooms.keys():
                     sender_socket.send(f'Error: {room} does not exist'.encode())
                     continue
-                if sender_socket not in self.rooms[room].client_sockets:
+                # check if the sender is in the room.
+                if sender_name not in self.rooms[room].clients.keys():
                     sender_socket.send(f'Error: You are not in {room}'.encode())
                     continue
                 message_broadcast(self.rooms[room], sender_name, message, sender_socket)
@@ -297,7 +312,7 @@ class IRC_App:
             - leave current room. if you are in the main lobby, you will be asked if you 
               want to exit. if yes, then client will terminate.
 
-        - /list (opt) #room_name. 
+        - /users (opt) #room_name. 
             - will list *all members* active in the application by default. 
             - you can also specifiy n number of rooms to get user lists, assuming those rooms exist. 
             - if not, it will be skipped and the user will be notified of its non-existance.
@@ -363,24 +378,91 @@ class IRC_App:
                     sender_socket.send(f'Rejoining {DEFAULT_ROOM_NAME}...\n'.encode('ascii'))
                     self.join_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
 
-
         # Case where user wants to list all (or some) active members in the app
-        '''NOTE: must check for multiple room names! If more than one, compile into single list'''
-        # elif message.split()[0] == "/list"
+        # NOTE: must check for multiple room names! If more than one, compile into single list
+        elif message.split()[0] == "/users":
+            # case where we want users from specific rooms
+            if len(message.split()) > 1:
+                # get any room names from the command
+                message_ = message.split()
+                rooms_to_list = []
+                for word in message_:
+                    if word[0] == '#':
+                        rooms_to_list.append(word)
+                # get users from each room
+                user_list = []
+                for room in self.rooms.keys():
+                    # add room name up front before getting users
+                    user_list.append(f'\n{room} users:\n')
+                    user_list.extend(self.rooms[room].list_users_in_room())
+                user_list = " \n".join(user_list)
+                # send list back to client
+                sender_socket.send(user_list.encode('ascii'))
 
+            # case where we want *all* active members in the instance
+            else:
+                user_list = self.get_all_users()
+                user_list = " \n".join(user_list)
+                sender_socket.send(user_list.encode('ascii'))
 
         # Case where user wants to directly message another user
-        '''NOTE: must check for username after /message too!'''    
-        # elif message.split()[0] == "/message":
-
+        # NOTE: must check for username after /message too!'''    
+        elif message.split()[0] == "/message":
+            # case where client doesn't include a user_name
+            if len(message.split()) == 1:
+                sender_socket.send('Error: must include a username. /message <user_name>'.encode('ascii'))
+            # case where user tries to message more than one person at a time
+            elif len(message.split()) > 2:
+                sender_socket.send('Error:  can only DM one user at a time!'.encode('ascii'))
+            # otherwise send message (blocked users are handled elsewhere!)
+            else:
+                receiver = message.split()[1]
+                self.send_dm(sender_name, message, receiver)
 
         # Case where a user wants to check their direct messages
-        # elif message.split()[] == "/dms":
+        elif message.split()[0] == "/dms":
+            # check if there's a specific user they're looking for
+            if len(message.split()) > 1:
+                users = []
+                message_ = message.split()
+                for word in message_:
+                    # skip the dm command
+                    if word[0] == '/':
+                        continue
+                    users.append(word)
+                # send each DM from each user
+                for u in users:
+                    self.get_dm(sender_name, sender=users[u])    
+
+            # otherwise send all the dms
+            self.get_dm(sender_name)
         
-
         # Case where user wants to block DM's from another user
-        # elif message.split()[0] == "/block":
-
+        elif message.split()[0] == "/block":
+            # case where the users messes up, yet again
+            if len(message.split()) == 1:
+                sender_socket.send('Error: /block requires at least one user_name argument!'.encode('ascii'))
+            message_ = message.split()
+            # remove the command, then iterate through list
+            message_.pop(0)
+            to_block = []
+            for name in message:
+                to_block.append(name)
+            # send to User() to block each name sent in
+            for name in to_block:
+                self.block(sender_name, name)
 
         # Case where user wants to un-block another user.
-        # elif message.split()[] == "/unblock":
+        elif message.split()[0] == "/unblock":
+            # case where the users messes up, yet again
+            if len(message.split()) == 1:
+                sender_socket.send('Error: /unblock requires at least one user_name argument!'.encode('ascii'))
+            message_ = message.split()
+            # remove the command, then iterate through list
+            message_.pop(0)
+            to_unblock = []
+            for name in message:
+                to_unblock.append(name)
+            # send to User() to block each name sent in
+            for name in to_unblock:
+                self.unblock(sender_name, name)

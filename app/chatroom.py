@@ -35,5 +35,5 @@ class Chatroom:
         return f"{client_name} has left the room!\n"
 
     # returns a list of current users in this room as a string.
-    def list_clients_in_room(self):
+    def list_users_in_room(self):
         return list([key for key in self.clients])
