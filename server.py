@@ -8,7 +8,7 @@ import logging
 import socket
 from threading import Thread
 
-from app import IRC_App
+from app.irc import IRC_App
 
 # Constants
 HOST = socket.gethostname()
@@ -16,7 +16,6 @@ PORT = 5050
 ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
 CLIENT_MAX = 10
-DEFAULT_ROOM_NAME = '#lobby'
 
 # Application instance. #lobby room is present by default.
 APP = IRC_App(debug=True)     
@@ -36,7 +35,9 @@ if DEBUG:
                         format='%(asctime)s %(message)s', 
                         datefmt='%m/%d/%Y %I:%M:%S %p')
 
-#-------------------------START UP----------------------------------#
+
+#--------------------------------------START UP-------------------------------------------#
+
 
 # Create a new socket using IPv4 address familty (AF_INET),
 # and the TCP protocol (SOCK_STREAM)
@@ -49,15 +50,8 @@ SOCKET.listen(CLIENT_MAX)              # how many clients do we need to listen f
 if DEBUG:
     logging.info(f'SERVER STARTED \nHost: {HOST}, Port: {PORT}')
 
-#-------------------------------------------------------------------#
 
-def broadcast_to_all(message):
-    '''
-    NOTE: modify IRC app to do this for the room the user is in!
-          this just broadcasts to *everyone*
-    '''
-    for socket in SERVER_INFO['Sockets']:
-        socket.send(message)
+#------------------------------------------------------------------------------------------#
 
 
 def run_server():
@@ -84,13 +78,11 @@ def run_server():
             print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
             SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
-
-            # alert new connection via the terminal
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
             # add user to default room and update user dict
             # APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
-            # APP.users[new_user] = (APP.rooms[DEFAULT_ROOM_NAME], client)
+            # APP.add_user(new_user, client)
             # print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
@@ -101,7 +93,7 @@ def run_server():
         else:
             message = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
-                logging.info(f'Message recieved! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nMESSAGE: {message}')
+                logging.info(f'Message recieved! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
             print(message)
 
             # send to message parser
@@ -118,7 +110,7 @@ def handle(client):
         try:
             message = client.recv(BUFFER_MAX).decode('ascii')
             # search user list for the username associated with this client
-            user = find_user(client)
+            user = find_user(client)[1]
             if DEBUG:
                 logging.info(f'server.handle() - Message from user:{user} \nMessage: {message}')
             
@@ -131,7 +123,7 @@ def handle(client):
         except:
             print("\n***USER DISCONNECT***")
             # search user list for the username associated with this client
-            user = find_user(client)
+            user = find_user(client)[1]
             if DEBUG:
                 logging.info(f'server.handle() - {user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
             
@@ -157,21 +149,11 @@ def find_user(client):
 
     - client = client socket() object
     
-    returns: user_name (str)
+    returns a tuple (user_name(str), user_socket (socket()))
     '''
     user_list = SERVER_INFO["Users"]
     index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
-    return SERVER_INFO["Users"][index[0]][1]
-
-
-def find_socket(user_name):
-    '''
-    finds an associated socket with this user name
-    returns a socket() object
-    '''
-    socket_list = SERVER_INFO["Sockets"]
-    index = [i for i, socket_list in enumerate(socket_list) if socket_list[0] == find_user(user_name)]
-    return SERVER_INFO["Sockets"][index[0]][1]
+    return SERVER_INFO["Users"][index[0]]
 
 
 #------------------------------------------------------------------------------------#

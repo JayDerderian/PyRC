@@ -11,6 +11,17 @@ There is also built-in debugging functionality using logs.
 Set DEBUG to true to turn on logging system.
 '''
 
+'''
+TODO:
+    Make sure User() and Chatroom() dont have their own copies of message_broadcast()
+    Have add/remove/whatever functions return strings to broadcast, and have
+    message_broadcast() be called here.
+
+    ex: message_broadcase(User.remove_user(username).encode('ascii'))
+'''
+
+from user import User
+from chatroom import Chatroom
 
 DEFAULT_ROOM_NAME = '#lobby'
 
@@ -120,14 +131,11 @@ class IRC_App:
         '''
         # Case where this room doesn't already exist
         if room_to_join not in self.rooms.keys():
-            if self.debug:
-                print(f'Creating and joining {room_to_join}...')
             self.create_room(room_to_join, sender_name, sender_socket)
         # Case where it DOES already exist
         else:
-            if self.debug:
-                print(f'Joining {room_to_join}...')
-            self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
+            message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
+            message_broadcast(self.rooms[room_to_join], sender_name, message)
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
@@ -143,7 +151,8 @@ class IRC_App:
         - sender_socket = sender socket() object
         '''
         self.rooms[room_to_join] = Chatroom(room_name=room_to_join)
-        self.rooms[room_to_join].add_new_client_to_room(sender_name, sender_socket)
+        message = self.rooms[room_to_join].add_new_client_to_room(sender_name, sender_socket)
+        message_broadcast(self.rooms[room_to_join], sender_name, message)
 
     # Check if the room exists, check if user is in the room,
     # remove user from room and delete room if it is empty
@@ -165,14 +174,42 @@ class IRC_App:
             sender_socket.send(f'Error: You are not in {room_to_leave}\n'.encode())
         # otherwise leave
         else:
-            self.rooms[room_to_leave].remove_client_from_room(sender_name, sender_socket)
+            message = self.rooms[room_to_leave].remove_client_from_room(sender_name, sender_socket)
+            message_broadcast(self.rooms[room_to_leave], sender_name, message)
             # remove the room if it's empty.
             if len(self.rooms[room_to_leave].clients) == 0:
                 # make sure we don't accidentally delete the default room!
                 if room_to_leave != DEFAULT_ROOM_NAME:
                     del self.rooms[room_to_leave]
             # send user back to #lobby
-            self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
+            message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
+            message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, message)
+
+    # directly message another user
+    def dm_user(self, sender, message, receiver):
+        '''
+        directly message another user. 
+        wont send message if sender has been blocked by receiver!
+
+        this works with the User() object.
+
+        parameters
+        ------------
+        sender = '' (name of sender)
+        message = ''
+        reciever = '' (name of sender)
+        '''
+        # find receiver
+        for u in self.users:
+            if u == receiver:
+                user = self.users[receiver]
+                break
+        # make sure sender isn't blocked by receiver
+        if user.has_blocked(sender):
+            print(f'{sender} has been blocked by {receiver}!')
+        else:
+            # save message to User() instance
+            user.get_dm(sender, message)
 
     # Check if rooms exist, check if user is in room,
     # if room exists and user is in it then send message, otherwise skip
@@ -182,7 +219,7 @@ class IRC_App:
 
         parameters
         ------------
-        - rooms_to_send = list[str] of '#room_name' or single room name (str)
+        - rooms_to_send = list[str] of '#room_name', or single room name (str)
         - sender_socket = sender socket() instance.
         - sender_name = string
         - message = string
@@ -210,22 +247,26 @@ class IRC_App:
     # block a user
     def block(self, user_name, to_block):
         '''
-        blocks a user from DM'ing someone. this is a wrapper for User()
+        blocks a user from DM'ing someone. 
+        this is a wrapper for User().block(user_name)
         '''
         for u in self.users:
             if u == user_name:
                 user = self.users[user_name]
                 user.block(to_block)
+                break
 
     # unblock a user
     def unblock(self, user_name, to_unblock):
         '''
-        unblocks a user. this is a wrapper for User()
+        unblocks a user. 
+        this is a wrapper for User().unblock(user_name)
         '''
         for u in self.users:
             if u == user_name:
                 user = self.users[user_name]
                 user.unblock(to_unblock)
+                break
 
     # main message parser.
     def message_parser(self, message, sender_name, sender_socket):
@@ -248,6 +289,7 @@ class IRC_App:
 
         commands
         ----------
+
         - /join #room_name
             - join a chatroom. a new one will be created if it doesn't already exist.
 
@@ -256,12 +298,16 @@ class IRC_App:
               want to exit. if yes, then client will terminate.
 
         - /list (opt) #room_name. 
-            - will list all members active in the application by default. 
+            - will list *all members* active in the application by default. 
             - you can also specifiy n number of rooms to get user lists, assuming those rooms exist. 
             - if not, it will be skipped and the user will be notified of its non-existance.
 
         - /message <user>
             - send a direct message to another user, regardless if they're in the same room with you.
+        
+        - /dms (opt) <from_user>
+            - gets *all* your direct messages and who they're from by default.
+            - specify <from_user> if you want to see messages from a specific person.
 
         - /block <user>
             - block DM's from other users
@@ -328,103 +374,13 @@ class IRC_App:
         # elif message.split()[0] == "/message":
 
 
+        # Case where a user wants to check their direct messages
+        # elif message.split()[] == "/dms":
+        
+
         # Case where user wants to block DM's from another user
         # elif message.split()[0] == "/block":
 
 
         # Case where user wants to un-block another user.
         # elif message.split()[] == "/unblock":
-
-
-
-#------------------------------------------------------------------------------------------------------------------------------#
-
-class Chatroom:
-
-    def __init__(self, room_name):
-        
-        self.name = room_name
-        # A dictionary of clients 
-        # Key is the user name and the value is their socket() object 
-        self.clients = {}  
-
-    # returns True if a given user is in this room
-    def has_user(self, user_name):
-        return True if user_name in self.clients.keys() else False 
-
-    # Adds a new client to a chatroom and notifies clients in that room
-    def add_new_client_to_room(self, client_name, new_socket):
-        print(f'\nadding {client_name} to {self.name}')
-
-        self.clients[client_name] = new_socket
-        
-        message = f"{client_name} has joined the room!\n"
-        message_broadcast(self, client_name, new_socket, message)
-
-    # Removes an existing client from a chatroom and notifies the clients in that room
-    def remove_client_from_room(self, client_name, client_socket):
-        print(f'\nremoving {client_name} from {self.name}')
-
-        self.clients.pop(client_name)
-
-        message = f"{client_name} has left the room!\n"
-        message_broadcast(self, client_name, client_socket, message)
-
-    # returns a list of current users in this room as a string.
-    def list_clients_in_room(self):
-        return str([key for key in self.clients])
-
-
-class User:
-
-    def __init__(self, name, socket):
-        self.name = name        # username
-        self.socket = socket    # user's socket() object
-        self.blocked = []       # list of blocked users (list[str])
-        self.dms = {}           # dictionary of direct messages. key is sender, value is the message
-    
-    def get_dm(self, sender, message):
-        '''
-        ability to recieve DM's from another user.
-        if the user isn't blocked, then the message will be saved to self.dms
-        with the senders name as the key
-        '''
-        if sender not in self.blocked:
-            self.dms[sender] = message
-        else:
-            print(f'{sender} is blocked!')
-    
-    def read_all_dms(self):
-        '''
-        displays and returns a list of messages from other users. 
-        '''
-        dms = []
-        if len(self.dms) > 0:
-            for sender in self.dms:
-                print(f'{sender} : {self.dms[sender]}\n')
-                dms.append(f'{sender} : {self.dms[sender]}\n')
-        return dms
-
-    def read_dm(self, sender):
-        '''
-        displays a message from a single user
-        '''
-        if len(self.dms) > 0:
-            if sender in self.dms.keys():
-                print(f'From: {sender}: \n{self.dms[sender]}\n')
-            else:
-                print(f'No messages from {sender}!\n')
-
-    def block(self, sender):
-        '''
-        block another user
-        '''
-        if sender not in self.blocked:
-            self.blocked.append(sender)
-    
-    def unblock(self, sender):
-        '''
-        unblock another user.
-        '''
-        if sender in self.blocked:
-            self.blocked.pop(sender)
