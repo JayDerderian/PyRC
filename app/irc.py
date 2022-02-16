@@ -195,9 +195,9 @@ class IRC_App:
 
         parameters
         ------------
-        sender = '' (name of sender)
-        message = ''
-        reciever = '' (name of sender)
+        - sender = '' (name of sender)
+        - message = ''
+        - reciever = '' (name of sender)
         '''
         # find receiver
         for u in self.users:

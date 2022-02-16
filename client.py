@@ -137,20 +137,20 @@ def run_client():
             # case where it's our first connection
             if message == 'Connected to server':
                 if DEBUG:
-                    logging.info(f'Connected to server!')
+                    logging.info('Connected to server!')
                 # send user name as the first message.
                 SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
             # otherwise its some other message
             else:
                 if DEBUG:
-                    logging.info(f'{message}')
+                    logging.info(f'{CLIENT_INFO["Name"]}: \n{message}')
                 # display(message)
                 print(message)
 
         # case where the server shuts down
         except:
             if DEBUG:
-                logging.info('Closing connection...')
+                logging.info('SERVER OFFLINE! Closing connection...')
             # display('SERVER OFFLINE! Closing connection...')
             print('\nSERVER OFFLINE! Closing connection...')
             SOCKET.close() 

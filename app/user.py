@@ -3,6 +3,11 @@ user class module
 '''
 
 class User:
+    '''
+    user class. keeps track of a user's name and socket.
+    also handles direct message functionality, and blocking/unblocking
+    other users.
+    '''
 
     def __init__(self, name, socket):
         self.name = name        # username
@@ -20,7 +25,7 @@ class User:
             # are there messages from sender?
             if sender in self.dms.keys():
                 self.dms[sender] = message
-                self.socket.send(message.encode('ascii'))
+                self.socket.send(f'{sender}: {message}'.encode('ascii'))
             else:
                 self.socket.send(f'No messages from {sender}'.encode('ascii'))
         else:
@@ -45,7 +50,7 @@ class User:
         '''
         if len(self.dms) > 0:
             if sender in self.dms.keys():
-                self.socket.send(f'From: {sender}: \n{self.dms[sender]}\n'.encode('ascii'))
+                self.socket.send(f'{sender}: \n{self.dms[sender]}\n'.encode('ascii'))
             else:
                 self.socket.send(f'No messages from {sender}!\n'.encode('ascii'))
     
