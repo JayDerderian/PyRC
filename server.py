@@ -9,6 +9,7 @@ import socket
 from threading import Thread
 
 from app.irc import IRC_App
+from app.chatroom import Chatroom
 
 # Constants
 HOST = socket.gethostname()
@@ -19,7 +20,7 @@ CLIENT_MAX = 10
 DEFAULT_ROOM_NAME = '#lobby'
 
 # Application instance. #lobby room is present by default.
-APP = IRC_App(debug=True)     
+APP = IRC_App(debug=True)  
 
 SERVER_INFO = {
     "Sockets": [],  # list of client_socket objects
@@ -35,7 +36,7 @@ if DEBUG:
                         level=logging.DEBUG, 
                         format='%(asctime)s %(message)s', 
                         datefmt='%m/%d/%Y %I:%M:%S %p')
-
+                        
 
 #--------------------------------------START UP-------------------------------------------#
 
@@ -49,7 +50,7 @@ print(f'\n...bound at host: {ADDR[0]}, port:{ADDR[1]}...')
 print('...listening...\n')
 SOCKET.listen(CLIENT_MAX)              # how many clients do we need to listen for?
 if DEBUG:
-    logging.info(f'SERVER STARTED \nHost: {HOST}, Port: {PORT}')
+    logging.info(f'server.py \nSERVER STARTED \nHost: {HOST}, Port: {PORT}')
 
 
 #------------------------------------------------------------------------------------------#
@@ -63,26 +64,25 @@ def run_server():
         # allow clients to connect
         client, address = SOCKET.accept()
         if DEBUG:
-            logging.info(f'Client connected! Address: {address}') 
+            logging.info(f'server.run_server() \nClient connected! Address: {address}') 
 
         # new user!
         if client not in SERVER_INFO["Sockets"]:
             # confirm connection to new user, and broadcast to app
             if DEBUG:
-                logging.info(f'Sending new client connection confirmation...')
+                logging.info(f'server.run_server() \nSending new client connection confirmation...')
             client.send(f'Connected to server'.encode('ascii'))
 
             # get user name since that's the first message
             new_user = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
-                logging.info(f'New user - Name: {new_user},  Address:{address}')
+                logging.info(f'server.run_server() \nNew user - Name: {new_user},  Address:{address}')
             print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
             SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
-            # add user to default room and update user dict
-            APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(new_user, client)
+            # add user to instance (and default room) and update user dict
             APP.add_user(new_user, client)
             print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
@@ -94,7 +94,7 @@ def run_server():
         else:
             message = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
-                logging.info(f'Message received! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
+                logging.info(f'server.run_server() \nMessage received! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
             
             # print(message)
             # send to message parser
@@ -113,11 +113,11 @@ def handle(client):
             # search user list for the username associated with this client
             user = find_user(client)[1]
             if DEBUG:
-                logging.info(f'server.handle() - Message from user:{user} \nMessage: {message}')
+                logging.info(f'server.handle() \nMessage from user:{user} \nMessage: {message}')
             
             # print(f'{user}: {message}')
             # parse message in app
-            APP.message_parser(message, find_user(client), client)
+            APP.message_parser(message, find_user(client)[1], client)
 
         # case where a user disconnects
         except:
@@ -125,7 +125,7 @@ def handle(client):
             # search user list for the username associated with this client
             user = find_user(client)[1]
             if DEBUG:
-                logging.info(f'server.handle() - {user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
+                logging.info(f'server.handle() \n{user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
             
             # search for and remove user from chatroom if they disconnect
             for room in APP.rooms:

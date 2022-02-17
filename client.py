@@ -60,12 +60,12 @@ try:
     # send initial message (the username) to server
     SOCKET.connect(CLIENT_INFO['Address'])
     if DEBUG:
-        logging.info(f'Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}')
+        logging.info(f'client.py \nConnected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}')
     print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
 except:
     print('...Could not connect!')
     if DEBUG:
-        logging.info(f'Could not connect to server! \nSocket: {SOCKET}')
+        logging.info(f'client.py \nCould not connect to server! \nSocket: {SOCKET}')
     SOCKET.close()
 
 
@@ -100,14 +100,14 @@ def message():
         elif message.split()[0] == '/quit':
             print('\n***Disconnecting!***')
             if DEBUG:
-                logging.info('Disconnecting from server!')
+                logging.info('client.message() \nDisconnecting from server!')
             SOCKET.close()
         # send to server
         else:
             SOCKET.send(message.encode('ascii'))
 
         if DEBUG:
-            logging.info(f'Sending message: {message}')
+            logging.info(f'client.message() \nSending message: {message}')
 
 
 # main client program
@@ -125,13 +125,13 @@ def run_client():
             # case where it's our first connection
             if message == 'Connected to server':
                 if DEBUG:
-                    logging.info('Connected to server!')
+                    logging.info('client.run_client() \nConnected to server!')
                 # send user name as the first message.
                 SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
             # otherwise its some other message
             else:
                 if DEBUG:
-                    logging.info(f'{CLIENT_INFO["Name"]}: \n{message}')
+                    logging.info(f'\nclient.run_client() \nMessage from server: \n{message}')
                 # user must be in same room as any other client to talk to them,
                 # so we save the room info from the message to aid with the
                 # input prompt. Try to only do this when we need to. 
@@ -143,7 +143,7 @@ def run_client():
         # case where the server shuts down
         except:
             if DEBUG:
-                logging.info('SERVER OFFLINE! Closing connection...')
+                logging.info('client.run_client() \nSERVER OFFLINE! Closing connection...')
             # display('SERVER OFFLINE! Closing connection...')
             print('\nSERVER OFFLINE! Closing connection...')
             SOCKET.close() 
