@@ -77,8 +77,9 @@ def show_commands():
     ''''
     display available commands and how to join/leave rooms 
     '''
-    for key in CLIENT_COMMANDS:
-        print(CLIENT_COMMANDS[key])
+    # for key in CLIENT_COMMANDS:
+    #     print(CLIENT_COMMANDS[key])
+    return print("Not ready yet!")
 
 
 # messaging functionality
@@ -89,7 +90,7 @@ def message():
     while True:
         # get message from user. 
         '''
-        NOTE: display() will provide a wrapper where when it's ready'''
+        NOTE: display() will provide a wrapper here when it's ready'''
         # message = message = input(f'{CLIENT_INFO["Current Room"]} {CLIENT_INFO["Name"]} > ')
         message = input(f'{CLIENT_INFO["Name"]} > ')
 
@@ -101,13 +102,13 @@ def message():
             print('\n***Disconnecting!***')
             if DEBUG:
                 logging.info('client.message() \nDisconnecting from server!')
+            SOCKET.shutdown(2)
             SOCKET.close()
         # send to server
         else:
             SOCKET.send(message.encode('ascii'))
-
-        if DEBUG:
-            logging.info(f'client.message() \nSending message: {message}')
+            if DEBUG:
+                logging.info(f'client.message() \nSending message: {message}')
 
 
 # main client program
@@ -115,39 +116,53 @@ def run_client():
     '''
     main client method for application. 
     handles message I/O and shuts down if a server disconnects.
+
+    NOTE: maybe rework this to something like this so we can 
+          log messages more easily when debugging...
+          
+    while True:
+        message = SOCKET.recv(BUFFER_MAX).decode('ascii')
+        if message is None:
+            disconnect...
+        elif message == 'Connected to Server';
+            ...
+        else:
+            ...
     '''
     # main communication loop
     while True:
-        # case where we get a message from the server
-        try:
-            # listen for messages from the server
-            message = SOCKET.recv(BUFFER_MAX).decode('ascii')
-            # case where it's our first connection
-            if message == 'Connected to server':
-                if DEBUG:
-                    logging.info('client.run_client() \nConnected to server!')
-                # send user name as the first message.
-                SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
-            # otherwise its some other message
-            else:
-                if DEBUG:
-                    logging.info(f'\nclient.run_client() \nMessage from server: \n{message}')
-                # user must be in same room as any other client to talk to them,
-                # so we save the room info from the message to aid with the
-                # input prompt. Try to only do this when we need to. 
-                if message.split()[0] != CLIENT_INFO['Current Room']:
-                    CLIENT_INFO["Current Room"] = message.split()[0]
-                # display(message)
-                print(message)
+        # listen for messages from the server
+        message = SOCKET.recv(BUFFER_MAX).decode('ascii')
+        if DEBUG:
+            logging.info(f'client.run_client() \nMessage from server: {message}')
 
         # case where the server shuts down
-        except:
+        if not message:
             if DEBUG:
                 logging.info('client.run_client() \nSERVER OFFLINE! Closing connection...')
             # display('SERVER OFFLINE! Closing connection...')
             print('\nSERVER OFFLINE! Closing connection...')
             SOCKET.close() 
             break
+
+        # case where it's our first connection
+        if message == 'Connected to server':
+            if DEBUG:
+                logging.info('client.run_client() \nConnected to server!')
+            # send user name as the first message.
+            SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
+
+        # otherwise its some other message
+        else:
+            # user must be in same room as any other client to talk to them,
+            # so we save the room info from the message to aid with the
+            # input prompt. Try to only do this when we need to. 
+            if message.split()[0] != CLIENT_INFO['Current Room']:
+                CLIENT_INFO["Current Room"] = message.split()[0]
+            # display(message)
+            print(message)
+
+
 
 
 # message parser to use with CLI

@@ -113,7 +113,7 @@ def handle(client):
             # search user list for the username associated with this client
             user = find_user(client)[1]
             if DEBUG:
-                logging.info(f'server.handle() \nMessage from user:{user} \nMessage: {message}')
+                logging.info(f'server.handle() \nMessage from user: {user} \nMessage: {message}')
             
             # print(f'{user}: {message}')
             # parse message in app
@@ -131,6 +131,7 @@ def handle(client):
             for room in APP.rooms:
                 if client in APP.rooms[room].clients.keys():
                     APP.rooms[room].remove_client_from_room(user, client)
+
             # remove user from APP's active user dictionary
             del APP.users[user]
 

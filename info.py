@@ -6,7 +6,7 @@ a module for containing dictionaries about app information.
 '''
 
 APP_INFO = {
-    "Name":  "PyChat",
+    "Name":  "PyRC",
     "Version": f'Version: {str(1.0)}',
     "Author": 'Author: Jay Derderian'
 }
@@ -22,10 +22,6 @@ CLIENT_COMMANDS = {
     "Leave":     "  /leave :   Removes client from a room. Removes room     ",
     "Leave2":    "             from server when the last client leaves      ",
     "Leave3":    "               ex: /leave #dnd                            ",
-    "Send":      "  /send :    Sends a message to the room client is in.    ",
-    "Send2":     "             Can be sent to multiple rooms.               ",
-    "Send3":     "               ex: /send #dnd Man, I love DND!            ",
-    "Send4":     "               ex: /send #dnd #orcs Check out my sheet!   ",
     "Members":   "  /members : Lists all clients in a room.                 ",
     "Quit":      "  /quit :    Disconnects client from the server.          ",
     "Bottom":    "----------------------------------------------------------\n"

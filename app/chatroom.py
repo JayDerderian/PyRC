@@ -38,15 +38,16 @@ class Chatroom:
 
         self.clients[client_name] = new_socket
     
-        return f"{client_name} has joined the room!\n"
+        return f"{client_name} has joined the room!"
         
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_room(self, client_name):
         print(f'chatroom.remove_new_client() \nremoving {client_name} from {self.name}')
+        logging.info(f'chatroom.remove_new_client() \nremoving {client_name} from {self.name}')
 
         del self.clients[client_name]
 
-        return f"{client_name} has left the room!\n"
+        return f"{client_name} has left the room!"
 
     # returns a list of current users in this room as a string.
     def list_users_in_room(self):
