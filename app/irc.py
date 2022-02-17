@@ -113,17 +113,13 @@ class IRC_App:
         if self.debug:
             print(f'\napp.get_current_room() - trying to find room {user_name} is currently in...')
             logging.info(f'app.get_current_room() \ntrying to find room {user_name} is currently in...')
-        for room in self.rooms:
-            if self.rooms[room].has_user(user_name):
-                room = self.rooms[room].name
+        for r in self.rooms:
+            if self.rooms[r].has_user(user_name):
+                room = r
         if room == '':
-            if self.debug:
-                print('\napp.get_current_room() - No room found!')
-                logging.info(f'app.get_current_room() \nERROR: could not find room associated with {user_name}!')
-            raise ValueError('No room found!')
-        else:
-            return room
-    
+            raise ValueError(f"{user_name} is not in a room!")
+        return room
+
     # get a user's connection info
     def get_connection_info(self, user_name):
         '''
@@ -369,7 +365,7 @@ class IRC_App:
             print(f'\napp.message_parser() "/" check \nsender: {sender_name} \nroom: {room} \nressage: {message}\n')
             if self.debug:
                 logging.info(f'app.message_parser() \nSender: {sender_name} \nRoom: {room} \nMessage: {message}\n')
-            message_broadcast(self.rooms[room], sender_name, sender_socket, message, self.debug)
+            message_broadcast(self.rooms[room], sender_name, message, self.debug)
 
         # Case where user wants to join a room:
         elif message.split()[0] == "/join":
