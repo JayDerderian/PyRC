@@ -34,7 +34,7 @@ CLIENT_INFO = {
 CURRENT_ROOM = '#lobby'
 
 # Debugging stuff. Set DEBUG to true to activate logging.
-DEBUG = False
+DEBUG = True
 if DEBUG:
     # start a log file for debugging
     logging.basicConfig(filename='IRC_Client.log', 
@@ -90,8 +90,8 @@ def message():
         # get message from user. 
         '''
         NOTE: display() will provide a wrapper where when it's ready'''
-        message = message = input(f'{CLIENT_INFO["Current Room"]} {CLIENT_INFO["Name"]} > ')
-        # message = input(f'{CLIENT_INFO["Name"]} > ')
+        # message = message = input(f'{CLIENT_INFO["Current Room"]} {CLIENT_INFO["Name"]} > ')
+        message = input(f'{CLIENT_INFO["Name"]} > ')
 
         # display local help menu
         if message.split()[0]=='/help':

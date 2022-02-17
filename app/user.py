@@ -2,6 +2,15 @@
 user class module
 '''
 
+import logging
+
+DEBUG = False
+if DEBUG:
+    logging.basicConfig(filename='IRC_User.log', 
+                        filemode='w', 
+                        level=logging.DEBUG, 
+                        format='%(asctime)s %(message)s', 
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
 class User:
     '''
     user class. keeps track of a user's name and socket.
@@ -9,7 +18,9 @@ class User:
     other users.
     '''
 
-    def __init__(self, name, socket):
+    def __init__(self, name, socket, debug=False):
+        self.debug = debug      # debuggin' stuff..
+
         self.name = name        # username
         self.socket = socket    # user's socket() object
         self.blocked = []       # list of blocked users (list[str])

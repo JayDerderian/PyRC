@@ -8,13 +8,23 @@ This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
 '''
 
-from user import User
-from chatroom import Chatroom
+import logging
+
+from app.user import User
+from app.chatroom import Chatroom
+
+DEBUG = True
+if DEBUG:
+    logging.basicConfig(filename='IRC_App.log', 
+                        filemode='w', 
+                        level=logging.DEBUG, 
+                        format='%(asctime)s %(message)s', 
+                        datefmt='%m/%d/%Y %I:%M:%S %p')
 
 DEFAULT_ROOM_NAME = '#lobby'
 
 # Broadcast a message to all clients in a given room
-def message_broadcast(room, sender_name, message):
+def message_broadcast(room, sender_name, message, debug=False):
     '''
     sends a message to all the users in a Chatroom() instance
 
@@ -27,6 +37,8 @@ def message_broadcast(room, sender_name, message):
     '''
     # Display message
     print(f'{room.name} {sender_name} > {message}\n')
+    if debug:
+        logging.info(f'\nirc.message_broadcast() \nSending message from {sender_name} to room {room.name}: \nMessage: {message}')
     # Send the message to all clients in this room *except* the one that sent the messaage
     for client in room.clients:
         if client != sender_name:
@@ -47,11 +59,13 @@ class IRC_App:
     def __init__(self, debug=False):
         # Debuggin' stuff
         self.debug = debug
+
         # Dictionary of active rooms. 
         # Key is room name (str), value is the Chatroom() object. 
         # #lobby room is always present by default, even if its empty.
         self.rooms = {}
         self.rooms[DEFAULT_ROOM_NAME] = Chatroom(room_name=DEFAULT_ROOM_NAME)  
+
         # Dictionary of active users
         # Key is username, value is User() object
         self.users = {}
@@ -61,7 +75,11 @@ class IRC_App:
         if user_name not in self.users.keys():
             self.users[user_name] = User(name=user_name, 
                                          socket=new_user_socket)
+            if self.debug:
+                logging.info(f'\napp.add_user() \nadding {user_name} and creating User() object: \n{type(self.users[user_name])}')
         else:
+            if self.debug:
+                logging.info(f'\napp.add_user() {user_name} is already in the server!')
             print(f'{user_name} is already in the server!')
 
     # remove a user from the instance
@@ -69,7 +87,7 @@ class IRC_App:
         if user_name in self.users.keys():
             del self.users[user_name]
         else:
-            print(f'{user_name} is not in the server!')
+            print(f'\napp.remove)user \n{user_name} is not in the server!')
     
     # get a list of all active users
     def get_all_users(self):
@@ -118,13 +136,15 @@ class IRC_App:
         - sender_socket = sender socket() object
 
         '''
+        if self.debug:
+            logging.info(f'\napp.join_room() \nattempting to add {sender_name} to {room_to_join}...')
         # Case where this room doesn't already exist
         if room_to_join not in self.rooms.keys():
             self.create_room(room_to_join, sender_name, sender_socket)
         # Case where it DOES already exist
         else:
             message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
-            message_broadcast(self.rooms[room_to_join], sender_name, message)
+            message_broadcast(self.rooms[room_to_join], sender_name, message, self.debug)
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
@@ -141,7 +161,10 @@ class IRC_App:
         '''
         self.rooms[room_to_join] = Chatroom(room_name=room_to_join)
         message = self.rooms[room_to_join].add_new_client_to_room(sender_name, sender_socket)
-        message_broadcast(self.rooms[room_to_join], sender_name, message)
+        if self.debug:
+            logging.info(f'\napp.create_room() \ncreating new Chatroom() instance: \n{type(self.rooms[room_to_join])}')
+            logging.info(f'\napp.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}')
+        message_broadcast(self.rooms[room_to_join], sender_name, message, self.debug)
 
     # Check if the room exists, check if user is in the room,
     # remove user from room and delete room if it is empty
@@ -157,22 +180,30 @@ class IRC_App:
         '''
         # case where room doesn't exist
         if room_to_leave not in self.rooms.keys():
-            sender_socket.send(f'Error: {room_to_leave} does not exist\n'.encode())
+            if self.debug:
+                logging.info(f'\napp.leave_room() \n{sender_name} tried to leave {room_to_leave} - it does not exist!')
+            sender_socket.send(f'Error: {room_to_leave} does not exist\n'.encode('ascii'))
         # case where the user isn't in that room
         elif sender_name not in self.rooms[room_to_leave].clients.keys():
-            sender_socket.send(f'Error: You are not in {room_to_leave}\n'.encode())
+            if self.debug:
+                logging.info(f'\napp.leave_room() \n{sender_name} tried to leave {room_to_leave} - they are not in it!')
+            sender_socket.send(f'Error: You are not in {room_to_leave}\n'.encode('ascii'))
         # otherwise leave
         else:
-            message = self.rooms[room_to_leave].remove_client_from_room(sender_name, sender_socket)
-            message_broadcast(self.rooms[room_to_leave], sender_name, message)
+            exit_message = self.rooms[room_to_leave].remove_client_from_room(sender_name, sender_socket)
+            if self.debug:
+                logging.info(f'\napp.leave_room() \nsending exit message: {exit_message} \nto sender_socket: {sender_socket}')
+            message_broadcast(self.rooms[room_to_leave], sender_name, exit_message, self.debug)
             # remove the room if it's empty.
             if len(self.rooms[room_to_leave].clients) == 0:
                 # make sure we don't accidentally delete the default room!
                 if room_to_leave != DEFAULT_ROOM_NAME:
                     del self.rooms[room_to_leave]
             # send user back to #lobby
-            message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
-            message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, message)
+            join_message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
+            if self.debug:
+                logging.info(f'\napp.leave_room() \nsending join message: {join_message} \nto sender_socket: {sender_socket}')
+            message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, join_message, self.debug)
 
     # directly message another user
     def send_dm(self, sender, message, receiver):
@@ -193,8 +224,13 @@ class IRC_App:
             if u == receiver:
                 user = self.users[receiver]
                 break
+        # find sender socket to send return message
+        for s in self.users:
+            if s == sender:
+                sender_ = self.users[sender]
         # make sure sender isn't blocked by receiver
         if user.has_blocked(sender):
+            sender_.socket.send(f'You were blocked by {receiver}!'.encode('ascii'))
             print(f'{sender} has been blocked by {receiver}!')
         else:
             # save message to User() instance. 
@@ -210,7 +246,7 @@ class IRC_App:
         ------------
         receiver = '' (user requesting dms)
         sender = None (set to user_name string if user wants 
-                      dms from a specific user)
+                       dms from a specific user)
         '''
         # find receiver
         for u in self.users:
@@ -221,43 +257,6 @@ class IRC_App:
             return user.read_all_dms()
         else:
             return user.read_dms(sender)
-
-    # Check if rooms exist, check if user is in the room,
-    # if room exists and user is in it then send message, otherwise skip
-    def message_rooms(self, rooms_to_send, sender_name, message, sender_socket):
-        '''
-        send a message to a chatroom or list of chatrooms (assuming they exist)
-
-        parameters
-        ------------
-        - rooms_to_send = list[str] of '#room_name', or single room name (str)
-        - sender_socket = sender socket() instance.
-        - sender_name = string
-        - message = string
-        '''
-        # case where we want to send to a single room
-        if type(rooms_to_send) == str:
-            # does the room exist?
-            if rooms_to_send not in self.rooms.keys():
-                sender_socket.send(f'Error: {rooms_to_send} does not exist!'.encode())
-            # check if the sender is in the room.
-            if sender_name not in self.rooms[rooms_to_send].clients.keys():
-                sender_socket.send(f'Error: You are not in {rooms_to_send}!'.encode())
-            else:
-                message_broadcast(self.rooms[rooms_to_send], sender_name, message, sender_socket)
-
-        # case where we want to message a series of rooms
-        elif type(rooms_to_send) == list:
-            for room in rooms_to_send:
-                # does the room exist?
-                if room not in self.rooms.keys():
-                    sender_socket.send(f'Error: {room} does not exist'.encode())
-                    continue
-                # check if the sender is in the room.
-                if sender_name not in self.rooms[room].clients.keys():
-                    sender_socket.send(f'Error: You are not in {room}'.encode())
-                    continue
-                message_broadcast(self.rooms[room], sender_name, message, sender_socket)
     
     # block a user
     def block(self, user_name, to_block):
@@ -345,6 +344,7 @@ class IRC_App:
         if self.debug:
             print(f"\napp.message_parser() \nsender sock: {sender_socket} \nsender_name: {sender_name} \nmessage: {message}")
             print(f'message as word list: {message.split()}')
+            logging.info(f"\napp.message_parser() \nsender sock: {sender_socket} \nsender_name: {sender_name} \nmessage: {message} \nmessage as word list: {message.split()}")
 
         # send message to room the user is currently in. 
         # this just checks whether there's a command prior to the message
@@ -353,11 +353,14 @@ class IRC_App:
             room = self.get_current_room(sender_name)
             if self.debug:
                 print(f'Sender: {sender_name} \nRoom: {room} \nMessage: {message}\n')
-            message_broadcast(self.rooms[room], sender_name, sender_socket, message)
+                logging.info(f'\napp.message_parser() \nSender: {sender_name} \nRoom: {room} \nMessage: {message}\n')
+            message_broadcast(self.rooms[room], sender_name, sender_socket, message, self.debug)
 
         # Case where user wants to join a room:
         elif message.split()[0] == "/join":
             if len(message.strip().split()) < 2:
+                if self.debug:
+                    logging.info(f'\napp.message_parser() \nSending /join error message to socket: \n {sender_socket}')
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
             else:
                 self.join_room(message.split()[1], sender_name, sender_socket)
@@ -365,16 +368,24 @@ class IRC_App:
         # Case where user wants to leave a room:
         elif message.split()[0] == "/leave":
             if len(message.strip().split()) < 2:
+                if self.debug:
+                    logging.info(f'\napp.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
                 sender_socket.send("/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n".encode('ascii'))
             else:
                 room_to_leave = message.strip().split()[1]
                 if room_to_leave[0] != "#":
+                    if self.debug:
+                        logging.info(f'\napp.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
                     sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
                 else:
                     # leave room...
                     sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
+                    if self.debug:
+                        logging.info(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
                     self.leave_room(room_to_leave, sender_name, sender_socket)
                     # ... then send back to #lobby
+                    if self.debug:
+                        logging.info(f'\napp.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
                     sender_socket.send(f'Rejoining {DEFAULT_ROOM_NAME}...\n'.encode('ascii'))
                     self.join_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
 

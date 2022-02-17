@@ -3,3 +3,8 @@
 /.vscode
 /old files
 test.py
+IRC_Client.log
+IRC_Server.log
+IRC_App.log
+IRC_Chatroom.log
+IRC_User.log

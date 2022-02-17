@@ -16,6 +16,7 @@ PORT = 5050
 ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
 CLIENT_MAX = 10
+DEFAULT_ROOM_NAME = '#lobby'
 
 # Application instance. #lobby room is present by default.
 APP = IRC_App(debug=True)     
@@ -26,7 +27,7 @@ SERVER_INFO = {
 }
 
 # Debugging stuff. Set DEBUG to True to activate logging.
-DEBUG = False
+DEBUG = True
 if DEBUG:
     # start a log file for debugging
     logging.basicConfig(filename='IRC_Server.log', 
@@ -81,9 +82,9 @@ def run_server():
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
             # add user to default room and update user dict
-            # APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_chatroom(new_user, client)
-            # APP.add_user(new_user, client)
-            # print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
+            APP.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(new_user, client)
+            APP.add_user(new_user, client)
+            print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
             thread = Thread(target=handle, args=(client,))
@@ -93,11 +94,11 @@ def run_server():
         else:
             message = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
-                logging.info(f'Message recieved! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
-            print(message)
-
+                logging.info(f'Message received! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
+            
+            # print(message)
             # send to message parser
-            # APP.message_parse(client, find_user(client), message)
+            APP.message_parser(message, find_user(client), client)
 
 
 def handle(client):
@@ -114,10 +115,9 @@ def handle(client):
             if DEBUG:
                 logging.info(f'server.handle() - Message from user:{user} \nMessage: {message}')
             
-            print(f'{user}: {message}')
-
+            # print(f'{user}: {message}')
             # parse message in app
-            # APP.message_parse(client, find_user(client), message)
+            APP.message_parser(message, find_user(client), client)
 
         # case where a user disconnects
         except:
@@ -128,11 +128,11 @@ def handle(client):
                 logging.info(f'server.handle() - {user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
             
             # search for and remove user from chatroom if they disconnect
-            # for room in APP.rooms:
-            #     if client in APP.rooms[room].client_sockets:
-            #         APP.rooms[room].remove_client_from_chatroom(user, client)
-            # # remove user from APP's active user dictionary
-            # del APP.users[user]
+            for room in APP.rooms:
+                if client in APP.rooms[room].clients.keys():
+                    APP.rooms[room].remove_client_from_room(user, client)
+            # remove user from APP's active user dictionary
+            del APP.users[user]
 
             # remove user info from SERVER_INFO instance, and close socket
             SERVER_INFO["Sockets"].remove(client)
