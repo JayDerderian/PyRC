@@ -82,7 +82,8 @@ class IRC_App:
         if user_name not in self.users.keys():
             # create new User() instance
             self.users[user_name] = User(name=user_name, 
-                                         socket=new_user_socket)
+                                         socket=new_user_socket,
+                                         curr_room=DEFAULT_ROOM_NAME)
             # add them to default lobby.
             self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(user_name, new_user_socket)
             if self.debug:
@@ -127,14 +128,18 @@ class IRC_App:
         if self.debug:
             print(f'\napp.get_current_room() - trying to find room {user_name} is currently in...')
             logging.info(f'app.get_current_room() \ntrying to find room {user_name} is currently in...\n')
-        for r in self.rooms:
-            if self.rooms[r].has_user(user_name):
-                room = r
-                break
-        if room == '':
-            return f'{user_name} not in a room!'
+        # for r in self.rooms:
+        #     if self.rooms[r].has_user(user_name):
+        #         room = r
+        #         break
+        # if room == '':
+        #     return f'{user_name} not in a room!'
+        # else:
+        #     return room
+        if user_name in self.users.keys():
+            return self.users[user_name].curr_room
         else:
-            return room
+            return f'{user_name} not found!'
 
     # get a user's connection info
     def get_connection_info(self, user_name):
@@ -174,13 +179,15 @@ class IRC_App:
             # Leave current room, join new room
             else:
                 # remove them from their current room
-                cur_room = self.get_users_current_room(sender_name)
+                # cur_room = self.get_users_current_room(sender_name)
+                cur_room = self.users[sender_name].curr_room
                 leave_message = self.leave_room(cur_room, sender_name, sender_socket)
                 # make sure we don't broadcast to an empty room...
                 if len(self.rooms[cur_room].clients) > 0:
                     message_broadcast(self.rooms[cur_room], sender_name, leave_message, self.debug)
 
                 # add to room
+                self.users[sender_name].curr_room = room_to_join
                 join_message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
                 message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
 
@@ -242,7 +249,6 @@ class IRC_App:
 
             # remove user from room
             exit_message = self.rooms[room_to_leave].remove_client_from_room(sender_name)
-            
             if self.debug:
                 print(f'\napp.leave_room() - sending exit message: {exit_message} \nto sender_socket: {sender_socket}')
                 logging.info(f'app.leave_room() \nsending exit message: {exit_message} \nto sender_socket: {sender_socket}\n')
@@ -258,8 +264,8 @@ class IRC_App:
             #         del self.rooms[room_to_leave]
 
             # send user back to #lobby
+            self.users[sender_name].curr_name = DEFAULT_ROOM_NAME
             join_message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
-
             if self.debug:
                 print(f'\napp.leave_room() - sending join message: {join_message} \nto sender_socket: {sender_socket}')
                 logging.info(f'app.leave_room() \nsending join message: {join_message} \nto sender_socket: {sender_socket}\n')

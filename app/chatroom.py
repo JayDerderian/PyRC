@@ -25,6 +25,7 @@ class Chatroom:
         self.name = room_name
         # A dictionary of clients 
         # Key is the user name, value is their socket() object 
+        '''NOTE: make value User() objects?'''
         self.clients = {}  
 
     # returns True if a given user is in this room
@@ -33,6 +34,9 @@ class Chatroom:
 
     # Adds a new client to a chatroom and notifies clients in that room
     def add_new_client_to_room(self, client_name, new_socket):
+        '''
+        add a new client. key is their username, value is the User() object
+        '''
         if self.debug:
             print(f'\nchatroom.add_new_client_to_room() - Adding {client_name} to {self.name}...')
             logging.info(f'chatroom.add_new_client_to_room() \nAdding: {client_name} \nsocket: {new_socket}\n')

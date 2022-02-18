@@ -20,14 +20,22 @@ class User:
     TODO: add /whisper option for direct messages between a single other user
     '''
 
-    def __init__(self, name, socket, debug=False):
-        self.debug = debug      # debuggin' stuff..
+    def __init__(self, name, socket, curr_room, debug=False):
+        self.debug = debug           # debuggin' stuff..
 
-        self.name = name        # username
-        self.socket = socket    # user's socket() object
-        self.blocked = []       # list of blocked users (list[str])
-        self.dms = {}           # dictionary of direct messages. key is sender, value is the message
-    
+        self.name = name             # username
+        self.socket = socket         # user's socket() object
+        self.curr_room = curr_room   # user's current room (str)
+        self.blocked = []            # list of blocked users (list[str])
+        self.dms = {}                # dictionary of direct messages. 
+                                     # key is sender, value is the message
+
+    def send(self, message):
+        '''
+        send a message via this user's socket object.
+        '''
+        self.socket.send(message)
+
     def get_dm(self, sender, message):
         '''
         ability to recieve DM's from another user.
