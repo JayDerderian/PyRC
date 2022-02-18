@@ -92,6 +92,14 @@ def run_server():
 
         # message from existing user
         else:
+            '''
+            NOTE: I think having the app instance only be called in handle() will be better.
+                  This loop operates on its own thread, and each new user gets a new thread 
+                  created for them when they join. 
+                  
+                  This is the current approach to asynchronous I/O, though it'll be worth it 
+                  to look into this further!
+            '''
             # message = client.recv(BUFFER_MAX).decode('ascii')
             # if DEBUG:
             #     logging.info(f'server.run_server() \nMessage received! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')

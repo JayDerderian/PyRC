@@ -78,13 +78,17 @@ class IRC_App:
         - user_name = ''
         - new_user_socket = socket() object
         '''
+        # is this actually a new user?
         if user_name not in self.users.keys():
+            # create new User() instance
             self.users[user_name] = User(name=user_name, 
                                          socket=new_user_socket)
             # add them to default lobby.
             self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(user_name, new_user_socket)
             if self.debug:
                 logging.info(f'app.add_user() \nadding {user_name} and creating User() object: \n{type(self.users[user_name])}')
+
+        # case where they're already in the instance
         else:
             if self.debug:
                 logging.info(f'app.add_user() {user_name} is already in the server!')
@@ -168,9 +172,19 @@ class IRC_App:
             # Case where the user is already there
             if sender_name in self.rooms[room_to_join].clients.keys():
                 sender_socket.send('You are already in this room, silly!'.encode('ascii'))
+            # Leave current room, join new room
             else:
-                message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
-                message_broadcast(self.rooms[room_to_join], sender_name, message, self.debug)
+                # remove them from their current room
+                cur_room = self.get_users_current_room(sender_name)
+                leave_message = self.leave_room(cur_room, sender_name, sender_socket)
+                # make sure we don't broadcast to an empty room...
+                if len(self.rooms[cur_room].clients) > 0:
+                    message_broadcast(self.rooms[cur_room], sender_name, leave_message, self.debug)
+
+                # add to room and get acknowledgement message to send
+                join_message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
+                message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
+
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
@@ -404,6 +418,10 @@ class IRC_App:
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
             else:
                 self.join_room(message.split()[1], sender_name, sender_socket)
+
+        # TEMP response
+        else:
+            sender_socket.send(f'{message.split()[0]} command not ready!'.encode('ascii'))
 
         # # Case where user wants to leave a room:
         # elif message.split()[0] == "/leave":

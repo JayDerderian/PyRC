@@ -79,7 +79,7 @@ def show_commands():
     '''
     # for key in CLIENT_COMMANDS:
     #     print(CLIENT_COMMANDS[key])
-    return print("Not ready yet!")
+    return print("Not ready yet!\n")
 
 
 # messaging functionality
@@ -110,24 +110,11 @@ def message():
             if DEBUG:
                 logging.info(f'client.message() \nSending message: {message}')
 
-
 # main client program
 def run_client():
     '''
     main client method for application. 
     handles message I/O and shuts down if a server disconnects.
-
-    NOTE: maybe rework this to something like this so we can 
-          log messages more easily when debugging...
-          
-    while True:
-        message = SOCKET.recv(BUFFER_MAX).decode('ascii')
-        if message is None:
-            disconnect...
-        elif message == 'Connected to Server';
-            ...
-        else:
-            ...
     '''
     # main communication loop
     while True:
@@ -136,21 +123,21 @@ def run_client():
         if DEBUG:
             logging.info(f'client.run_client() \nMessage from server: {message}')
 
-        # case where the server shuts down
-        if not message:
-            if DEBUG:
-                logging.info('client.run_client() \nSERVER OFFLINE! Closing connection...')
-            # display('SERVER OFFLINE! Closing connection...')
-            print('\nSERVER OFFLINE! Closing connection...')
-            SOCKET.close() 
-            break
-
         # case where it's our first connection
         if message == 'Connected to server':
             if DEBUG:
                 logging.info('client.run_client() \nConnected to server!')
             # send user name as the first message.
             SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
+
+        # case where the server shuts down
+        elif not message:
+            if DEBUG:
+                logging.info('client.run_client() \nSERVER OFFLINE! Closing connection...')
+            # display('SERVER OFFLINE! Closing connection...')
+            print('\nSERVER OFFLINE! Closing connection...')
+            SOCKET.close() 
+            break
 
         # otherwise its some other message
         else:
@@ -161,9 +148,6 @@ def run_client():
                 CLIENT_INFO["Current Room"] = message.split()[0]
             # display(message)
             print(message)
-
-
-
 
 # message parser to use with CLI
 def display(message):
@@ -177,11 +161,11 @@ def display(message):
     return TEXT_UI.add_colors(message)
 
 
-#----------------------------------------------------------------------------#
+#------------------------------------------------------------------------------------------#
 
-# driver code. this uses two separate threads to run the 
-# receiving of messages and one for writing.
-receive_thread = Thread(target=run_client)
-write_thread = Thread(target=message)
-receive_thread.start()
-write_thread.start()
+# driver code. 
+# this uses two separate threads: one for receiving messages, and one for writing.
+rt = Thread(name='receive thread', target=run_client)
+wt = Thread(name='write thread', target=message)
+rt.start()
+wt.start()
