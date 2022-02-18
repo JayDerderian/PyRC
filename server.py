@@ -50,7 +50,7 @@ print(f'\n...bound at host: {ADDR[0]}, port:{ADDR[1]}...')
 print('...listening...\n')
 SOCKET.listen(CLIENT_MAX)              # how many clients do we need to listen for?
 if DEBUG:
-    logging.info(f'server.py \nSERVER STARTED \nHost: {HOST}, Port: {PORT}')
+    logging.info(f'server.py \nSERVER STARTED \nHost: {HOST}, Port: {PORT}\n')
 
 
 #------------------------------------------------------------------------------------------#
@@ -64,19 +64,19 @@ def run_server():
         # allow clients to connect
         client, address = SOCKET.accept()
         if DEBUG:
-            logging.info(f'server.run_server() \nClient connected! Address: {address}') 
+            logging.info(f'server.run_server() \nClient connected! Address: {address}\n') 
 
         # new user!
         if client not in SERVER_INFO["Sockets"]:
             # confirm connection to new user, and broadcast to app
             if DEBUG:
-                logging.info(f'server.run_server() \nSending new client connection confirmation...')
+                logging.info(f'server.run_server() \nSending new client connection confirmation...\n')
             client.send(f'Connected to server'.encode('ascii'))
 
             # get user name since that's the first message
             new_user = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
-                logging.info(f'server.run_server() \nNew user - Name: {new_user},  Address:{address}')
+                logging.info(f'server.run_server() \nNew user - Name: {new_user},  Address:{address}\n')
             print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
             SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
@@ -96,7 +96,7 @@ def run_server():
             NOTE: I think having the app instance only be called in handle() will be better.
                   This loop operates on its own thread, and each new user gets a new thread 
                   created for them when they join. 
-                  
+
                   This is the current approach to asynchronous I/O, though it'll be worth it 
                   to look into this further!
             '''
@@ -122,7 +122,7 @@ def handle(client):
             # search user list for the username associated with this client
             user = find_user(client)[1]
             if DEBUG:
-                logging.info(f'server.handle() \nMessage from user: {user} \nMessage: {message}')
+                logging.info(f'server.handle() \nMessage from user: {user} \nMessage: {message}\n')
             
             # print(f'{user}: {message}')
             # parse message in app

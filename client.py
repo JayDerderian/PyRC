@@ -60,12 +60,12 @@ try:
     # send initial message (the username) to server
     SOCKET.connect(CLIENT_INFO['Address'])
     if DEBUG:
-        logging.info(f'client.py \nConnected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}')
+        logging.info(f'client.py \nConnected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
     print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
 except:
     print('...Could not connect!')
     if DEBUG:
-        logging.info(f'client.py \nCould not connect to server! \nSocket: {SOCKET}')
+        logging.info(f'client.py \nCould not connect to server! \nSocket: {SOCKET}\n')
     SOCKET.close()
 
 
@@ -101,14 +101,14 @@ def message():
         elif message.split()[0] == '/quit':
             print('\n***Disconnecting!***')
             if DEBUG:
-                logging.info('client.message() \nDisconnecting from server!')
+                logging.info('client.message() \nDisconnecting from server!\n')
             SOCKET.shutdown(2)
             SOCKET.close()
         # send to server
         else:
             SOCKET.send(message.encode('ascii'))
             if DEBUG:
-                logging.info(f'client.message() \nSending message: {message}')
+                logging.info(f'client.message() \nSending message: {message}\n')
 
 # main client program
 def run_client():
@@ -121,19 +121,19 @@ def run_client():
         # listen for messages from the server
         message = SOCKET.recv(BUFFER_MAX).decode('ascii')
         if DEBUG:
-            logging.info(f'client.run_client() \nMessage from server: {message}')
+            logging.info(f'client.run_client() \nMessage from server: {message}\n')
 
         # case where it's our first connection
         if message == 'Connected to server':
             if DEBUG:
-                logging.info('client.run_client() \nConnected to server!')
+                logging.info('client.run_client() \nConnected to server!\n')
             # send user name as the first message.
             SOCKET.send(CLIENT_INFO["Name"].encode('ascii'))
 
         # case where the server shuts down
         elif not message:
             if DEBUG:
-                logging.info('client.run_client() \nSERVER OFFLINE! Closing connection...')
+                logging.info('client.run_client() \nSERVER OFFLINE! Closing connection...\n')
             # display('SERVER OFFLINE! Closing connection...')
             print('\nSERVER OFFLINE! Closing connection...')
             SOCKET.close() 
