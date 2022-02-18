@@ -92,7 +92,6 @@ class IRC_App:
         else:
             if self.debug:
                 logging.info(f'app.add_user() {user_name} is already in the server!\n')
-            print(f'{user_name} is already in the server!')
             new_user_socket.send(f'{user_name} is already in this instance!'.encode('ascii'))
 
     # remove a user from the instance
@@ -222,10 +221,17 @@ class IRC_App:
         '''
         # case where room doesn't exist
         if room_to_leave not in self.rooms.keys():
+            if self.debug:
+                print(f"\napp.leave_room() -{room_to_leave} doesn't exist!")
+                logging.info(f'app.leave_room() \nRoom {room_to_leave} doesnt exist!\n')            
             sender_socket.send(f'Error: {room_to_leave} does not exist\n'.encode('ascii'))
+
 
         # case where the user isn't in that room
         elif sender_name not in self.rooms[room_to_leave].clients.keys():
+            if self.debug:
+                print(f"\napp.leave_room() -{sender_name} isnt in that room!")
+                logging.info(f'app.leave_room() \nUser {sender_name} isnt in that room!\n')   
             sender_socket.send(f'Error: You are not in {room_to_leave}\n'.encode('ascii'))
 
         # otherwise leave
@@ -387,6 +393,10 @@ class IRC_App:
 
         - /quit
             - leave current instance.
+
+        TODO: add /whisper option for direct messages between a single other user! 
+              either create a single room for two users or connect two User() instances.
+              both will contain user socket objects.
 
         NOTE: /quit and /help are handled on the client side!
 

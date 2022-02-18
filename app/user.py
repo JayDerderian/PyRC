@@ -16,6 +16,9 @@ class User:
     user class. keeps track of a user's name and socket.
     also handles direct message functionality, and blocking/unblocking
     other users.
+
+    TODO:
+    add /whisper option for direct messages between a single other user
     '''
 
     def __init__(self, name, socket, debug=False):
