@@ -13,14 +13,6 @@ import logging
 from app.user import User
 from app.chatroom import Chatroom
 
-DEBUG = True
-if DEBUG:
-    logging.basicConfig(filename='IRC_App.log', 
-                        filemode='w', 
-                        level=logging.DEBUG, 
-                        format='%(asctime)s %(message)s', 
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-
 DEFAULT_ROOM_NAME = '#lobby'
 
 # Broadcast a message to all clients in a given room
@@ -50,13 +42,21 @@ class IRC_App:
     this class is instantiated. Irc_App() also keeps tracks of current users 
     and their socket info.
 
-    Irc_App().message_parser(message:str) is the main point of entry for this
+    IRC_App().message_parser(message:str) is the main point of entry for this
     application. All message strings recieved from the client should be sent 
     through here.
+
+    Initialize IRC_App(debug=True) to create a logger and terminal read outs
     '''
     def __init__(self, debug=False):
         # Debuggin' stuff
         self.debug = debug
+        if self.debug:
+            logging.basicConfig(filename='IRC_App.log', 
+                    filemode='w', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s %(message)s', 
+                    datefmt='%m/%d/%Y %I:%M:%S %p')
 
         # Dictionary of active rooms. 
         # Key is room name (str), value is the Chatroom() object. 
@@ -66,6 +66,7 @@ class IRC_App:
 
         # Dictionary of active users
         # Key is username, value is User() object
+        # Users can only be in one room at a time!
         self.users = {}
 
     # add a new user to the instance
@@ -85,9 +86,13 @@ class IRC_App:
                                          socket=new_user_socket,
                                          curr_room=DEFAULT_ROOM_NAME)
             # add them to default lobby.
-            self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(user_name, new_user_socket)
+            '''NOTE: do we need to update self.users[user].curr_name here too? 
+                     does python make a copy of the object (pass by value) when passing
+                     objects as arguments? not sure if self.users[user_name] and
+                     chatroom.clients[user_name] will have the same value for curr_room...'''
+            self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(self.users[user_name])
             if self.debug:
-                logging.info(f'app.add_user() \nadding {user_name} and creating User() object: \n{type(self.users[user_name])}\n')
+                logging.info(f'app.add_user() \nadding {user_name} and creating User() object: \n{self.users[user_name]}\n')
 
         # case where they're already in the instance
         else:
@@ -119,39 +124,6 @@ class IRC_App:
         '''
         return list(self.rooms.keys())
     
-    # gets the current room a user is in
-    def get_users_current_room(self, user_name):
-        '''
-        returns the room name (str) a user is currently in.
-        '''
-        room = ''
-        if self.debug:
-            print(f'\napp.get_current_room() - trying to find room {user_name} is currently in...')
-            logging.info(f'app.get_current_room() \ntrying to find room {user_name} is currently in...\n')
-        # for r in self.rooms:
-        #     if self.rooms[r].has_user(user_name):
-        #         room = r
-        #         break
-        # if room == '':
-        #     return f'{user_name} not in a room!'
-        # else:
-        #     return room
-        if user_name in self.users.keys():
-            return self.users[user_name].curr_room
-        else:
-            return f'{user_name} not found!'
-
-    # get a user's connection info
-    def get_connection_info(self, user_name):
-        '''
-        show current client's name, and socket info.
-        returns a tuple with the user_name and socket() object
-        '''
-        if user_name in self.users.keys():
-            return (user_name, self.users[user_name])
-        else:
-            print(f'{user_name} not in instance!')
-
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
     def join_room(self, room_to_join, sender_name, sender_socket):
@@ -164,13 +136,17 @@ class IRC_App:
         - sender_name = ''
         - sender_socket = sender socket() object
 
+        TODO: Modify to use User() objects instead of Socket() objects.
+
         '''
         if self.debug:
             print(f'\napp.join_room() \nattempting to add {sender_name} to {room_to_join}...')
             logging.info(f'app.join_room() \nattempting to add {sender_name} to {room_to_join}...\n')
+
         # Case where this room doesn't already exist
         if room_to_join not in self.rooms.keys():
-            self.create_room(room_to_join, sender_name, sender_socket)
+            self.create_room(room_to_join, sender_name)
+
         # Case where it DOES already exist
         else:
             # Case where the user is already there
@@ -179,7 +155,7 @@ class IRC_App:
             # Leave current room, join new room
             else:
                 # remove them from their current room
-                # cur_room = self.get_users_current_room(sender_name)
+                '''NOTE: see note in app.add_user()!'''
                 cur_room = self.users[sender_name].curr_room
                 leave_message = self.leave_room(cur_room, sender_name, sender_socket)
                 # make sure we don't broadcast to an empty room...
@@ -187,14 +163,13 @@ class IRC_App:
                     message_broadcast(self.rooms[cur_room], sender_name, leave_message, self.debug)
 
                 # add to room
-                self.users[sender_name].curr_room = room_to_join
-                join_message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
+                join_message = self.rooms[room_to_join].add_client_to_room(self.users[sender_name])
                 message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
 
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
-    def create_room(self, room_to_join, sender_name, sender_socket):
+    def create_room(self, room_to_join, sender_name):
         '''
         creates a new Chatroom() instance. 
         dont use directly! should only be called by self.join_room()
@@ -204,14 +179,20 @@ class IRC_App:
         - room_to_join = '#room_name
         - sender_name = ''
         - sender_socket = sender socket() object
+
+        TODO: Modify to use User() objects instead of Socket() objects.
         '''
+        # create room, add user, and update their info
         self.rooms[room_to_join] = Chatroom(room_name=room_to_join)
-        join_message = self.rooms[room_to_join].add_new_client_to_room(sender_name, sender_socket)
+        '''NOTE: see note in app.add_user()!'''
+        join_message = self.rooms[room_to_join].add_new_client_to_room(self.users[sender_name]) 
+
         if self.debug:
             print(f'\napp.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}')
             print(f'\napp.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}')
             logging.info(f'app.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}\n')
             logging.info(f'app.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}\n')
+
         message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
 
     # Check if the room exists, check if user is in the room,
@@ -225,12 +206,14 @@ class IRC_App:
         - room_to_leave = '' (key for app.rooms dict)
         - sender_socket = sender socket() objet
         - sender_name = ''
+
+        TODO: Modify to use User() objects instead of Socket() objects.
         '''
         # case where room doesn't exist
         if room_to_leave not in self.rooms.keys():
             if self.debug:
                 print(f"\napp.leave_room() -{room_to_leave} doesn't exist!")
-                logging.info(f'app.leave_room() \nRoom {room_to_leave} doesnt exist!\n')            
+                logging.error(f'app.leave_room() \nRoom {room_to_leave} doesnt exist!\n')            
             sender_socket.send(f'Error: {room_to_leave} does not exist\n'.encode('ascii'))
 
 
@@ -248,6 +231,7 @@ class IRC_App:
                 logging.info(f'app.leave_room() \nRemoving {sender_name} from {room_to_leave}...\n')
 
             # remove user from room
+            '''NOTE: see note in app.add_user()!'''
             exit_message = self.rooms[room_to_leave].remove_client_from_room(sender_name)
             if self.debug:
                 print(f'\napp.leave_room() - sending exit message: {exit_message} \nto sender_socket: {sender_socket}')
@@ -264,8 +248,9 @@ class IRC_App:
             #         del self.rooms[room_to_leave]
 
             # send user back to #lobby
-            self.users[sender_name].curr_name = DEFAULT_ROOM_NAME
-            join_message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
+            # self.users[sender_name].curr_name = DEFAULT_ROOM_NAME # NOTE this will be handled by chatroom.add_client_to_room()!
+            '''NOTE: see note in app.add_user()!'''
+            join_message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(self.users[sender_name])
             if self.debug:
                 print(f'\napp.leave_room() - sending join message: {join_message} \nto sender_socket: {sender_socket}')
                 logging.info(f'app.leave_room() \nsending join message: {join_message} \nto sender_socket: {sender_socket}\n')
@@ -400,7 +385,7 @@ class IRC_App:
         - /quit
             - leave current instance.
 
-        TODO: add /whisper option for direct messages between a single other user! 
+        TODO: add /whisper option for direct, real-time messages between two users! 
               either create a single room for two users or connect two User() instances.
               both will contain user socket objects.
 
@@ -426,11 +411,13 @@ class IRC_App:
 
         # Case where user wants to join a room:
         elif message.split()[0] == "/join":
+            # Case where there's a typo or user forgot to add a room argument
             if len(message.strip().split()) < 2:
                 if self.debug:
                     print(f'\napp.message_parser() \nSending /join error message to socket: \n {sender_socket}')
                     logging.info(f'app.message_parser() \nSending /join error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
+            # Otherwise join or create the room.
             else:
                 self.join_room(message.split()[1], sender_name, sender_socket)
 

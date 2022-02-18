@@ -71,13 +71,13 @@ def run_server():
             # confirm connection to new user, and broadcast to app
             if DEBUG:
                 logging.info(f'server.run_server() \nSending new client connection confirmation...\n')
-            client.send(f'Connected to server'.encode('ascii'))
+            client.send('Connected to server'.encode('ascii'))
 
             # get user name since that's the first message
             new_user = client.recv(BUFFER_MAX).decode('ascii')
             if DEBUG:
                 logging.info(f'server.run_server() \nNew user - Name: {new_user},  Address:{address}\n')
-            print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
+                print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
             SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
@@ -123,10 +123,8 @@ def handle(client):
             user = find_user(client)[1]
             if DEBUG:
                 logging.info(f'server.handle() \nMessage from user: {user} \nMessage: {message}\n')
-            
-            # print(f'{user}: {message}')
             # parse message in app
-            APP.message_parser(message, find_user(client)[1], client)
+            APP.message_parser(message, user, client)
 
         # case where a user disconnects
         except:
@@ -135,20 +133,18 @@ def handle(client):
             user = find_user(client)[1]
             if DEBUG:
                 logging.info(f'server.handle() \n{user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
-            
+
             # search for and remove user from chatroom if they disconnect
             for room in APP.rooms:
                 if APP.rooms[room].has_user(user):
                     APP.rooms[room].remove_client_from_room(user)
-
             # remove user from APP's active user dictionary
             del APP.users[user]
-
+            
             # remove user info from SERVER_INFO instance, and close socket
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
             client.close()
-
             print(f'{user} left the server!\n')
             break
 
@@ -157,9 +153,11 @@ def find_user(client):
     '''
     finds a user_name associated with a client socket object.
 
+    parameters
+    ------------
     - client = client socket() object
     
-    returns a tuple (user_name(str), user_socket (socket()))
+    returns a tuple (user_socket (socket(), user_name (str)))
     '''
     user_list = SERVER_INFO["Users"]
     index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]

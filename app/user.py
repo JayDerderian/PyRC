@@ -4,28 +4,31 @@ user class module
 
 import logging
 
-DEBUG = False
-if DEBUG:
-    logging.basicConfig(filename='IRC_User.log', 
-                        filemode='w', 
-                        level=logging.DEBUG, 
-                        format='%(asctime)s %(message)s', 
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
 class User:
     '''
-    user class. keeps track of a user's name and socket.
-    also handles direct message functionality, and blocking/unblocking
-    other users.
+    User class. Keeps track of a user's name, current room, and 
+    their socket() object.
+
+    Also handles direct message functionality (both asynchronous and not), 
+    and blocking/unblocking other users.
 
     TODO: add /whisper option for direct messages between a single other user
     '''
 
     def __init__(self, name, socket, curr_room, debug=False):
-        self.debug = debug           # debuggin' stuff..
+        # debuggin' stuff..
+        self.debug = debug           
+        if self.debug:
+            logging.basicConfig(filename='IRC_User.log', 
+                                filemode='w', 
+                                level=logging.DEBUG, 
+                                format='%(asctime)s %(message)s',
+                                datefmt='%m/%d/%Y %I:%M:%S %p')
 
         self.name = name             # username
         self.socket = socket         # user's socket() object
         self.curr_room = curr_room   # user's current room (str)
+        
         self.blocked = []            # list of blocked users (list[str])
         self.dms = {}                # dictionary of direct messages. 
                                      # key is sender, value is the message
@@ -33,6 +36,7 @@ class User:
     def send(self, message):
         '''
         send a message via this user's socket object.
+        message must be a string encoded to ascii!
         '''
         self.socket.send(message)
 
@@ -60,7 +64,7 @@ class User:
         if len(self.dms) > 0:
             for sender in self.dms:
                 dms.append(f'{sender} : {self.dms[sender]}\n')
-            dms_str = dms.join()
+            dms_str = dms.join(" \n")
             self.socket.send(dms_str.encode('ascii'))
         else:
             self.socket.send('No direct messages'.encode('ascii'))
