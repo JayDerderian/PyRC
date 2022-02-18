@@ -101,7 +101,7 @@ def message():
         elif message.split()[0] == '/quit':
             print('\n***Disconnecting!***')
             if DEBUG:
-                logging.info('client.message() \nDisconnecting from server!\n')
+                logging.info(f'client.message() \nCommand used: {message.split()[0]} \nDisconnecting from server!\n')
             SOCKET.shutdown(2)
             SOCKET.close()
         # send to server

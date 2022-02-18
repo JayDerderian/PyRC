@@ -24,8 +24,7 @@ class Chatroom:
 
         self.name = room_name
         # A dictionary of clients 
-        # Key is the user name (str), value is their socket() object 
-        '''NOTE: make value User() objects?'''
+        # Key is the user name (str), value is the User() object 
         self.clients = {}  
 
     # returns True if a given user is in this room
@@ -62,8 +61,8 @@ class Chatroom:
             print(f'\nchatroom.remove_new_client() - Removing {user.name} from {self.name}...')
             logging.info(f'chatroom.remove_new_client() \nRemoving {user.name} from {self.name}...\n')
         # delete the client
-        del self.clients[user.name]
-        return f"{user.name} has left the room!"
+        del self.clients[user]
+        return f"{user} has left the room!"
 
     # returns a list of current users in this room as a string.
     def list_users_in_room(self):

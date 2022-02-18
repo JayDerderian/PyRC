@@ -61,11 +61,12 @@ class IRC_App:
         # Dictionary of active rooms. 
         # Key is room name (str), value is the Chatroom() object. 
         # #lobby room is always present by default, even if its empty.
+        '''NOTE: Each Chatroom also has a dict of users and their objects!'''
         self.rooms = {}
         self.rooms[DEFAULT_ROOM_NAME] = Chatroom(room_name= DEFAULT_ROOM_NAME) 
 
         # Dictionary of active users
-        # Key is username, value is User() object
+        # Key is username (str), value is User() object
         # Users can only be in one room at a time!
         self.users = {}
 
@@ -104,6 +105,10 @@ class IRC_App:
     def remove_user(self, user_name):
         '''
         remove a user from app instance
+
+        parameters
+        -----------
+        - user_name = ''
         '''
         if user_name in self.users.keys():
             del self.users[user_name]
@@ -135,9 +140,6 @@ class IRC_App:
         - room_to_join = '#room_name'
         - sender_name = ''
         - sender_socket = sender socket() object
-
-        TODO: Modify to use User() objects instead of Socket() objects.
-
         '''
         if self.debug:
             print(f'\napp.join_room() \nattempting to add {sender_name} to {room_to_join}...')
@@ -296,9 +298,9 @@ class IRC_App:
 
         parameters
         ------------
-        receiver = '' (user requesting dms)
-        sender = None (set to user_name string if user wants 
-                       dms from a specific user)
+        - receiver = '' (user requesting dms)
+        - sender = None (set to user_name string if user wants 
+                         dms from a specific user)
         '''
         # find receiver
         for u in self.users:
@@ -403,7 +405,7 @@ class IRC_App:
         # this just checks whether there's a command prior to the message
         if message[0] != '/':
             # find the room, then send message
-            room = self.get_users_current_room(sender_name)
+            room = self.users[sender_name].curr_room
             if self.debug:
                 print(f'\napp.message_parser() "/" check \nsender: {sender_name} \nroom: {room} \nmessage: {message}\n')
                 logging.info(f'app.message_parser() \nSender: {sender_name} \nRoom: {room} \nMessage: {message}\n')
