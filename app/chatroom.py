@@ -33,8 +33,8 @@ class Chatroom:
 
     # Adds a new client to a chatroom and notifies clients in that room
     def add_new_client_to_room(self, client_name, new_socket):
-        print(f'\nadding {client_name} to {self.name}')
-        logging.info(f'chatroom.add_new_client_to_room() \nadding: {client_name} \nsocket: {new_socket}')
+        print(f'\nchatroom.add_new_client_to_room() - Adding {client_name} to {self.name}...')
+        logging.info(f'chatroom.add_new_client_to_room() \nAdding: {client_name} \nsocket: {new_socket}')
 
         self.clients[client_name] = new_socket
     
@@ -42,8 +42,8 @@ class Chatroom:
         
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_room(self, client_name):
-        print(f'chatroom.remove_new_client() \nremoving {client_name} from {self.name}')
-        logging.info(f'chatroom.remove_new_client() \nremoving {client_name} from {self.name}')
+        print(f'\nchatroom.remove_new_client() - Removing {client_name} from {self.name}...')
+        logging.info(f'chatroom.remove_new_client() \nRemoving {client_name} from {self.name}...')
 
         del self.clients[client_name]
 

@@ -92,13 +92,14 @@ def run_server():
 
         # message from existing user
         else:
-            message = client.recv(BUFFER_MAX).decode('ascii')
-            if DEBUG:
-                logging.info(f'server.run_server() \nMessage received! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
+            # message = client.recv(BUFFER_MAX).decode('ascii')
+            # if DEBUG:
+            #     logging.info(f'server.run_server() \nMessage received! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
             
-            # print(message)
-            # send to message parser
-            APP.message_parser(message, find_user(client), client)
+            # # print(message)
+            # # send to message parser
+            # APP.message_parser(message, find_user(client), client)
+            ...
 
 
 def handle(client):
@@ -129,8 +130,8 @@ def handle(client):
             
             # search for and remove user from chatroom if they disconnect
             for room in APP.rooms:
-                if client in APP.rooms[room].clients.keys():
-                    APP.rooms[room].remove_client_from_room(user, client)
+                if APP.rooms[room].has_user(user):
+                    APP.rooms[room].remove_client_from_room(user)
 
             # remove user from APP's active user dictionary
             del APP.users[user]

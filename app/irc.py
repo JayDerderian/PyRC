@@ -70,6 +70,14 @@ class IRC_App:
 
     # add a new user to the instance
     def add_user(self, user_name, new_user_socket):
+        '''
+        add a new user to app instance
+
+        parameters
+        ------------
+        - user_name = ''
+        - new_user_socket = socket() object
+        '''
         if user_name not in self.users.keys():
             self.users[user_name] = User(name=user_name, 
                                          socket=new_user_socket)
@@ -81,9 +89,13 @@ class IRC_App:
             if self.debug:
                 logging.info(f'app.add_user() {user_name} is already in the server!')
             print(f'{user_name} is already in the server!')
+            new_user_socket.send(f'{user_name} is already in this instance!'.encode('ascii'))
 
     # remove a user from the instance
     def remove_user(self, user_name):
+        '''
+        remove a user from app instance
+        '''
         if user_name in self.users.keys():
             del self.users[user_name]
         else:
@@ -104,7 +116,7 @@ class IRC_App:
         return list(self.rooms.keys())
     
     # gets the current room a user is in
-    def get_current_room(self, user_name):
+    def get_users_current_room(self, user_name):
         '''
         returns the room name (str) a user is currently in.
         '''
@@ -115,9 +127,11 @@ class IRC_App:
         for r in self.rooms:
             if self.rooms[r].has_user(user_name):
                 room = r
+                break
         if room == '':
-            raise ValueError(f"{user_name} is not in a room!")
-        return room
+            return f'{user_name} not in a room!'
+        else:
+            return room
 
     # get a user's connection info
     def get_connection_info(self, user_name):
@@ -151,8 +165,12 @@ class IRC_App:
             self.create_room(room_to_join, sender_name, sender_socket)
         # Case where it DOES already exist
         else:
-            message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
-            message_broadcast(self.rooms[room_to_join], sender_name, message, self.debug)
+            # Case where the user is already there
+            if sender_name in self.rooms[room_to_join].clients.keys():
+                sender_socket.send('You are already in this room, silly!'.encode('ascii'))
+            else:
+                message = self.rooms[room_to_join].add_client_to_room(sender_name, sender_socket)
+                message_broadcast(self.rooms[room_to_join], sender_name, message, self.debug)
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
@@ -213,10 +231,10 @@ class IRC_App:
                 message_broadcast(self.rooms[room_to_leave], sender_name, exit_message, self.debug)
 
             # remove the room if its empty.
-            if len(self.rooms[room_to_leave].clients) == 0:
-                # make sure we don't accidentally delete the default room!
-                if room_to_leave != DEFAULT_ROOM_NAME:
-                    del self.rooms[room_to_leave]
+            # if len(self.rooms[room_to_leave].clients) == 0:
+            #     # make sure we don't accidentally delete the default room!
+            #     if room_to_leave != DEFAULT_ROOM_NAME:
+            #         del self.rooms[room_to_leave]
 
             # send user back to #lobby
             join_message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(sender_name, sender_socket)
@@ -369,7 +387,7 @@ class IRC_App:
         # this just checks whether there's a command prior to the message
         if message[0] != '/':
             # find the room, then send message
-            room = self.get_current_room(sender_name)
+            room = self.get_users_current_room(sender_name)
             if self.debug:
                 print(f'\napp.message_parser() "/" check \nsender: {sender_name} \nroom: {room} \nmessage: {message}\n')
                 logging.info(f'app.message_parser() \nSender: {sender_name} \nRoom: {room} \nMessage: {message}\n')
@@ -387,131 +405,131 @@ class IRC_App:
             else:
                 self.join_room(message.split()[1], sender_name, sender_socket)
 
-        # Case where user wants to leave a room:
-        elif message.split()[0] == "/leave":
-            if self.debug:
-                print(f'\napp.message_parser() "/leave case"')
+        # # Case where user wants to leave a room:
+        # elif message.split()[0] == "/leave":
+        #     if self.debug:
+        #         print(f'\napp.message_parser() "/leave case"')
 
-            # Case where user just submits "/leave"
-            if len(message.strip().split()) < 2:
-                if self.debug:
-                    print(f'\napp.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
-                    logging.info(f'app.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
+        #     # Case where user just submits "/leave"
+        #     if len(message.split()) == 1:
+        #         if self.debug:
+        #             print(f'\napp.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
+        #             logging.info(f'app.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
 
-                sender_socket.send("/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n".encode('ascii'))
+        #         sender_socket.send("/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n".encode('ascii'))
 
-            # otherwise try to remove...
-            else:
-                room_to_leave = message.strip().split()[1]
-                if room_to_leave[0] != "#":
-                    if self.debug:
-                        print(f'\napp.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
-                        logging.info(f'app.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
+        #     # otherwise try to remove...
+        #     else:
+        #         room_to_leave = message.strip().split()[1]
+        #         if room_to_leave[0] != "#":
+        #             if self.debug:
+        #                 print(f'\napp.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
+        #                 logging.info(f'app.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
 
-                    sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
-                else:
-                    # leave room...
-                    sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
+        #             sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
+        #         else:
+        #             # leave room...
+        #             sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
 
-                    if self.debug:
-                        print(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
-                        logging.info(f'app.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
+        #             if self.debug:
+        #                 print(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
+        #                 logging.info(f'app.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
 
-                    self.leave_room(room_to_leave, sender_name, sender_socket)
+        #             self.leave_room(room_to_leave, sender_name, sender_socket)
 
-                    # ... then send back to #lobby
-                    if self.debug:
-                        print(f'\napp.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
-                        logging.info(f'app.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
+        #             # ... then send back to #lobby
+        #             if self.debug:
+        #                 print(f'\napp.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
+        #                 logging.info(f'app.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
 
-                    sender_socket.send(f'Rejoining {DEFAULT_ROOM_NAME}...\n'.encode('ascii'))
-                    self.join_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
+        #             sender_socket.send(f'Rejoining {DEFAULT_ROOM_NAME}...\n'.encode('ascii'))
+        #             self.join_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
 
-        # Case where user wants to list all (or some) active members in the app
-        # NOTE: must check for multiple room names! If more than one, compile into single list
-        elif message.split()[0] == "/users":
-            # case where we want users from specific rooms
-            if len(message.split()) > 1:
-                # get any room names from the command
-                message_ = message.split()
-                rooms_to_list = []
-                for word in message_:
-                    if word[0] == '#':
-                        rooms_to_list.append(word)
-                # get users from each room
-                user_list = []
-                for room in self.rooms.keys():
-                    # add room name up front before getting users
-                    user_list.append(f'\n{room} users:\n')
-                    user_list.extend(self.rooms[room].list_users_in_room())
-                user_list = " \n".join(user_list)
-                # send list back to client
-                sender_socket.send(user_list.encode('ascii'))
+        # # Case where user wants to list all (or some) active members in the app
+        # # NOTE: must check for multiple room names! If more than one, compile into single list
+        # elif message.split()[0] == "/users":
+        #     # case where we want users from specific rooms
+        #     if len(message.split()) > 1:
+        #         # get any room names from the command
+        #         message_ = message.split()
+        #         rooms_to_list = []
+        #         for word in message_:
+        #             if word[0] == '#':
+        #                 rooms_to_list.append(word)
+        #         # get users from each room
+        #         user_list = []
+        #         for room in self.rooms.keys():
+        #             # add room name up front before getting users
+        #             user_list.append(f'\n{room} users:\n')
+        #             user_list.extend(self.rooms[room].list_users_in_room())
+        #         user_list = " \n".join(user_list)
+        #         # send list back to client
+        #         sender_socket.send(user_list.encode('ascii'))
 
-            # case where we want *all* active members in the instance
-            else:
-                user_list = self.get_all_users()
-                user_list = " \n".join(user_list)
-                sender_socket.send(user_list.encode('ascii'))
+        #     # case where we want *all* active members in the instance
+        #     else:
+        #         user_list = self.get_all_users()
+        #         user_list = " \n".join(user_list)
+        #         sender_socket.send(user_list.encode('ascii'))
 
-        # Case where user wants to directly message another user
-        # NOTE: must check for username after /message too!'''    
-        elif message.split()[0] == "/message":
-            # case where client doesn't include a user_name
-            if len(message.split()) == 1:
-                sender_socket.send('Error: must include a username. /message <user_name>'.encode('ascii'))
-            # case where user tries to message more than one person at a time
-            elif len(message.split()) > 2:
-                sender_socket.send('Error:  can only DM one user at a time!'.encode('ascii'))
-            # otherwise send message (blocked users are handled elsewhere!)
-            else:
-                receiver = message.split()[1]
-                self.send_dm(sender_name, message, receiver)
+        # # Case where user wants to directly message another user
+        # # NOTE: must check for username after /message too!'''    
+        # elif message.split()[0] == "/message":
+        #     # case where client doesn't include a user_name
+        #     if len(message.split()) == 1:
+        #         sender_socket.send('Error: must include a username. /message <user_name>'.encode('ascii'))
+        #     # case where user tries to message more than one person at a time
+        #     elif len(message.split()) > 2:
+        #         sender_socket.send('Error:  can only DM one user at a time!'.encode('ascii'))
+        #     # otherwise send message (blocked users are handled elsewhere!)
+        #     else:
+        #         receiver = message.split()[1]
+        #         self.send_dm(sender_name, message, receiver)
 
-        # Case where a user wants to check their direct messages
-        elif message.split()[0] == "/dms":
-            # check if there's a specific user they're looking for
-            if len(message.split()) > 1:
-                users = []
-                message_ = message.split()
-                for word in message_:
-                    # skip the dm command
-                    if word[0] == '/':
-                        continue
-                    users.append(word)
-                # send each DM from each user
-                for u in users:
-                    self.get_dm(sender_name, sender=users[u])    
+        # # Case where a user wants to check their direct messages
+        # elif message.split()[0] == "/dms":
+        #     # check if there's a specific user they're looking for
+        #     if len(message.split()) > 1:
+        #         users = []
+        #         message_ = message.split()
+        #         for word in message_:
+        #             # skip the dm command
+        #             if word[0] == '/':
+        #                 continue
+        #             users.append(word)
+        #         # send each DM from each user
+        #         for u in users:
+        #             self.get_dm(sender_name, sender=users[u])    
 
-            # otherwise send all the dms
-            self.get_dm(sender_name)
+        #     # otherwise send all the dms
+        #     self.get_dm(sender_name)
         
-        # Case where user wants to block DM's from another user
-        elif message.split()[0] == "/block":
-            # case where the users messes up, yet again
-            if len(message.split()) == 1:
-                sender_socket.send('Error: /block requires at least one user_name argument!'.encode('ascii'))
-            message_ = message.split()
-            # remove the command, then iterate through list
-            message_.pop(0)
-            to_block = []
-            for name in message:
-                to_block.append(name)
-            # send to User() to block each name sent in
-            for name in to_block:
-                self.block(sender_name, name)
+        # # Case where user wants to block DM's from another user
+        # elif message.split()[0] == "/block":
+        #     # case where the users messes up, yet again
+        #     if len(message.split()) == 1:
+        #         sender_socket.send('Error: /block requires at least one user_name argument!'.encode('ascii'))
+        #     message_ = message.split()
+        #     # remove the command, then iterate through list
+        #     message_.pop(0)
+        #     to_block = []
+        #     for name in message:
+        #         to_block.append(name)
+        #     # send to User() to block each name sent in
+        #     for name in to_block:
+        #         self.block(sender_name, name)
 
-        # Case where user wants to un-block another user.
-        elif message.split()[0] == "/unblock":
-            # case where the users messes up, yet again
-            if len(message.split()) == 1:
-                sender_socket.send('Error: /unblock requires at least one user_name argument!'.encode('ascii'))
-            message_ = message.split()
-            # remove the command, then iterate through list
-            message_.pop(0)
-            to_unblock = []
-            for name in message:
-                to_unblock.append(name)
-            # send to User() to block each name sent in
-            for name in to_unblock:
-                self.unblock(sender_name, name)
+        # # Case where user wants to un-block another user.
+        # elif message.split()[0] == "/unblock":
+        #     # case where the users messes up, yet again
+        #     if len(message.split()) == 1:
+        #         sender_socket.send('Error: /unblock requires at least one user_name argument!'.encode('ascii'))
+        #     message_ = message.split()
+        #     # remove the command, then iterate through list
+        #     message_.pop(0)
+        #     to_unblock = []
+        #     for name in message:
+        #         to_unblock.append(name)
+        #     # send to User() to block each name sent in
+        #     for name in to_unblock:
+        #         self.unblock(sender_name, name)
