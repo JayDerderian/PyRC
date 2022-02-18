@@ -199,13 +199,13 @@ class IRC_App:
         - sender_socket = sender socket() object
         '''
         self.rooms[room_to_join] = Chatroom(room_name=room_to_join)
-        message = self.rooms[room_to_join].add_new_client_to_room(sender_name, sender_socket)
+        join_message = self.rooms[room_to_join].add_new_client_to_room(sender_name, sender_socket)
         if self.debug:
             print(f'\napp.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}')
             print(f'\napp.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}')
             logging.info(f'app.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}\n')
             logging.info(f'app.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}\n')
-        message_broadcast(self.rooms[room_to_join], sender_name, message, self.debug)
+        message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
 
     # Check if the room exists, check if user is in the room,
     # remove user from room and delete room if it is empty
@@ -420,8 +420,6 @@ class IRC_App:
 
         # Case where user wants to join a room:
         elif message.split()[0] == "/join":
-            if self.debug:
-                print(f'\napp.message_parser() "/join case"')
             if len(message.strip().split()) < 2:
                 if self.debug:
                     print(f'\napp.message_parser() \nSending /join error message to socket: \n {sender_socket}')

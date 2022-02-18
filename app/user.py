@@ -17,8 +17,7 @@ class User:
     also handles direct message functionality, and blocking/unblocking
     other users.
 
-    TODO:
-    add /whisper option for direct messages between a single other user
+    TODO: add /whisper option for direct messages between a single other user
     '''
 
     def __init__(self, name, socket, debug=False):
