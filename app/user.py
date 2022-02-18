@@ -100,7 +100,7 @@ class User:
         unblock another user.
         '''
         if sender in self.blocked:
-            self.blocked.pop(sender)
+            self.blocked.remove(sender)
             self.socket.send(f'{sender} has been unblocked!'.encode('ascii'))
         else:
             self.socket.send(f'{sender} was not blocked!'.encode('ascii'))

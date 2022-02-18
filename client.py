@@ -12,7 +12,6 @@ import logging
 import socket
 from threading import Thread
 
-from ui.ui import GUI
 from ui.cli import CLI
 from info import APP_INFO, CLIENT_COMMANDS
 
@@ -24,14 +23,12 @@ ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
 
 TEXT_UI = CLI()
-UI = GUI()
 
 CLIENT_INFO = {
     "Name": '',          # client user name
     "Address": ADDR,     # (host, port)
     "Current Room": ''   # current room. used for simplifying commands.
 }
-CURRENT_ROOM = '#lobby'
 
 # Debugging stuff. Set DEBUG to true to activate logging.
 DEBUG = True
@@ -89,8 +86,7 @@ def message():
     '''
     while True:
         # get message from user. 
-        '''
-        NOTE: display() will provide a wrapper here when it's ready'''
+        '''NOTE: display() will provide a wrapper here when it's ready'''
         # message = message = input(f'{CLIENT_INFO["Current Room"]} {CLIENT_INFO["Name"]} > ')
         message = input(f'{CLIENT_INFO["Name"]} > ')
 
@@ -147,6 +143,9 @@ def run_client():
             if message.split()[0] != CLIENT_INFO['Current Room']:
                 CLIENT_INFO["Current Room"] = message.split()[0]
             # display(message)
+            '''NOTE: is this interferring with the write thread's input prompt?
+            for some reason messages from the server sort of over-lap with the text
+            from the input prompt.'''
             print(message)
 
 # message parser to use with CLI

@@ -30,7 +30,7 @@ def message_broadcast(room, sender_name, message, debug=False):
     if debug:
         print(f'\nirc.message_broadcast() \nSending message from {sender_name} to room {room.name}: \nMessage: {message}')
         logging.info(f'irc.message_broadcast() \nSending message from {sender_name} to room {room.name}: \nMessage: {message}\n')
-    # Send the message to all clients in this room *except* the one that sent the messaage
+    # Send the message to all clients in this room, including the sender.
     for client in room.clients:
         room.clients[client].send(f'{room.name} {sender_name} : {message}'.encode('ascii'))
 
@@ -63,8 +63,8 @@ class IRC_App:
         # #lobby room is always present by default, even if its empty.
         '''NOTE: Each Chatroom also has a dict of users and their objects!'''
         self.rooms = {}
-        self.rooms[DEFAULT_ROOM_NAME] = Chatroom(room_name= DEFAULT_ROOM_NAME) 
-
+        self.rooms[DEFAULT_ROOM_NAME] = Chatroom(room_name = DEFAULT_ROOM_NAME, 
+                                                 debug = self.debug) 
         # Dictionary of active users
         # Key is username (str), value is User() object
         # Users can only be in one room at a time!
@@ -83,9 +83,10 @@ class IRC_App:
         # is this actually a new user?
         if user_name not in self.users.keys():
             # create new User() instance
-            self.users[user_name] = User(name=user_name, 
-                                         socket=new_user_socket,
-                                         curr_room=DEFAULT_ROOM_NAME)
+            self.users[user_name] = User(name = user_name, 
+                                         socket = new_user_socket,
+                                         curr_room = DEFAULT_ROOM_NAME,
+                                         debug = self.debug)
             # add them to default lobby.
             '''NOTE: do we need to update self.users[user].curr_name here too? 
                      does python make a copy of the object (pass by value) when passing
@@ -181,8 +182,6 @@ class IRC_App:
         - room_to_join = '#room_name
         - sender_name = ''
         - sender_socket = sender socket() object
-
-        TODO: Modify to use User() objects instead of Socket() objects.
         '''
         # create room, add user, and update their info
         self.rooms[room_to_join] = Chatroom(room_name=room_to_join)
@@ -194,7 +193,7 @@ class IRC_App:
             print(f'\napp.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}')
             logging.info(f'app.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}\n')
             logging.info(f'app.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}\n')
-
+        # send join message
         message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
 
     # Check if the room exists, check if user is in the room,
@@ -208,8 +207,6 @@ class IRC_App:
         - room_to_leave = '' (key for app.rooms dict)
         - sender_socket = sender socket() objet
         - sender_name = ''
-
-        TODO: Modify to use User() objects instead of Socket() objects.
         '''
         # case where room doesn't exist
         if room_to_leave not in self.rooms.keys():
@@ -276,20 +273,19 @@ class IRC_App:
         # find receiver
         for u in self.users:
             if u == receiver:
-                user = self.users[receiver]
+                receiver_ = self.users[receiver]
                 break
         # find sender socket to send return message
         for s in self.users:
             if s == sender:
                 sender_ = self.users[sender]
         # make sure sender isn't blocked by receiver
-        if user.has_blocked(sender):
+        if receiver_.has_blocked(sender):
             sender_.socket.send(f'You were blocked by {receiver}!'.encode('ascii'))
-            print(f'{sender} has been blocked by {receiver}!')
         else:
             # save message to User() instance. 
             # User() will send message via the user's socket.
-            user.get_dm(sender, message)
+            receiver_.get_dm(sender, message)
 
     def get_dm(self, receiver, sender=None):
         '''
@@ -355,6 +351,9 @@ class IRC_App:
 
         commands
         ----------
+
+        - (No command) <message>
+            - Send message to current room. #lobby is the default room.
 
         - /join #room_name
             - join a chatroom. a new one will be created if it doesn't already exist.

@@ -58,7 +58,7 @@ class Chatroom:
         - client_name = '' (client to remove)
         '''
         if self.debug:
-            print(f'\nchatroom.remove_new_client() - Removing {user.name} from {self.name}...')
+            print(f'\nchatroom.remove_new_client() - Removing {user} from {self.name}...')
             logging.info(f'chatroom.remove_new_client() \nRemoving {user.name} from {self.name}...\n')
         # delete the client
         del self.clients[user]
