@@ -148,6 +148,9 @@ class IRC_App:
 
         # Case where this room doesn't already exist
         if room_to_join not in self.rooms.keys():
+            # first remove from #lobby
+            self.leave_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
+            # then create new room.
             self.create_room(room_to_join, sender_name)
 
         # Case where it DOES already exist
@@ -184,7 +187,8 @@ class IRC_App:
         - sender_socket = sender socket() object
         '''
         # create room, add user, and update their info
-        self.rooms[room_to_join] = Chatroom(room_name=room_to_join)
+        self.rooms[room_to_join] = Chatroom(room_name = room_to_join, 
+                                            debug = self.debug)
         '''NOTE: see note in app.add_user()!'''
         join_message = self.rooms[room_to_join].add_new_client_to_room(self.users[sender_name]) 
 
@@ -193,6 +197,7 @@ class IRC_App:
             print(f'\napp.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}')
             logging.info(f'app.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}\n')
             logging.info(f'app.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}\n')
+
         # send join message
         message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
 
@@ -205,8 +210,8 @@ class IRC_App:
         parameters
         -------------
         - room_to_leave = '' (key for app.rooms dict)
-        - sender_socket = sender socket() objet
         - sender_name = ''
+        - sender_socket = sender socket() objet
         '''
         # case where room doesn't exist
         if room_to_leave not in self.rooms.keys():
@@ -247,9 +252,8 @@ class IRC_App:
             #         del self.rooms[room_to_leave]
 
             # send user back to #lobby
-            # self.users[sender_name].curr_name = DEFAULT_ROOM_NAME # NOTE this will be handled by chatroom.add_client_to_room()!
             '''NOTE: see note in app.add_user()!'''
-            join_message = self.rooms[DEFAULT_ROOM_NAME].add_client_to_room(self.users[sender_name])
+            join_message = self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(self.users[sender_name])
             if self.debug:
                 print(f'\napp.leave_room() - sending join message: {join_message} \nto sender_socket: {sender_socket}')
                 logging.info(f'app.leave_room() \nsending join message: {join_message} \nto sender_socket: {sender_socket}\n')
@@ -422,49 +426,46 @@ class IRC_App:
             else:
                 self.join_room(message.split()[1], sender_name, sender_socket)
 
+        # Case where user wants to leave a room:
+        elif message.split()[0] == "/leave":
+            if self.debug:
+                print(f'\napp.message_parser() "/leave case"')
+
+            # Case where user just submits "/leave"
+            if len(message.split()) == 1:
+                if self.debug:
+                    print(f'\napp.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
+                    logging.info(f'app.message_parser() \nSending /leave error message to socket: \n {sender_socket}\n')
+                sender_socket.send("/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n".encode('ascii'))
+
+            # otherwise try to remove...
+            else:
+                room_to_leave = message.strip().split()[1]
+                # case where user forgets to include "#" in "#room_name"
+                if room_to_leave[0] != "#":
+                    if self.debug:
+                        print(f'\napp.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
+                        logging.info(f'app.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}\n')
+                    sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
+
+                else:
+                    # leave room...
+                    if self.debug:
+                        print(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
+                        logging.info(f'app.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...\n')
+                    sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
+                    self.leave_room(room_to_leave, sender_name, sender_socket)
+
+                    # ... then send back to #lobby
+                    if self.debug:
+                        print(f'\napp.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
+                        logging.info(f'app.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...\n')
+                    sender_socket.send(f'Rejoining {DEFAULT_ROOM_NAME}...\n'.encode('ascii'))
+                    self.join_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
+
         # TEMP response
         else:
             sender_socket.send(f'{message.split()[0]} command not ready!'.encode('ascii'))
-
-        # # Case where user wants to leave a room:
-        # elif message.split()[0] == "/leave":
-        #     if self.debug:
-        #         print(f'\napp.message_parser() "/leave case"')
-
-        #     # Case where user just submits "/leave"
-        #     if len(message.split()) == 1:
-        #         if self.debug:
-        #             print(f'\napp.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
-        #             logging.info(f'app.message_parser() \nSending /leave error message to socket: \n {sender_socket}\n')
-
-        #         sender_socket.send("/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n".encode('ascii'))
-
-        #     # otherwise try to remove...
-        #     else:
-        #         room_to_leave = message.strip().split()[1]
-        #         if room_to_leave[0] != "#":
-        #             if self.debug:
-        #                 print(f'\napp.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
-        #                 logging.info(f'app.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}\n')
-
-        #             sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
-        #         else:
-        #             # leave room...
-        #             sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
-
-        #             if self.debug:
-        #                 print(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
-        #                 logging.info(f'app.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...\n')
-
-        #             self.leave_room(room_to_leave, sender_name, sender_socket)
-
-        #             # ... then send back to #lobby
-        #             if self.debug:
-        #                 print(f'\napp.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
-        #                 logging.info(f'app.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...\n')
-
-        #             sender_socket.send(f'Rejoining {DEFAULT_ROOM_NAME}...\n'.encode('ascii'))
-        #             self.join_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
 
         # # Case where user wants to list all (or some) active members in the app
         # # NOTE: must check for multiple room names! If more than one, compile into single list

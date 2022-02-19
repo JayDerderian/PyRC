@@ -31,7 +31,7 @@ class User:
         
         self.blocked = []            # list of blocked users (list[str])
         self.dms = {}                # dictionary of direct messages. 
-                                     # key is sender, value is the message
+                                     # key is sender (str), value is the message (str)
 
     def send(self, message):
         '''
