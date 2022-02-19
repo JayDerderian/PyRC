@@ -111,6 +111,8 @@ def run_client():
     '''
     main client method for application. 
     handles message I/O and shuts down if a server disconnects.
+
+    NOTE: maybe switch back to a try/except block soon?
     '''
     # main communication loop
     while True:

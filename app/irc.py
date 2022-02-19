@@ -148,8 +148,14 @@ class IRC_App:
 
         # Case where this room doesn't already exist
         if room_to_join not in self.rooms.keys():
-            # first remove from #lobby
-            self.leave_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
+            # first remove user from their current room
+            '''NOTE: double check against self.leave().
+            maybe just use chatroom.remove_user_from_room()? don't want to send user
+            back to lobby if they're trying to join a newly created room.'''
+            room = self.users[sender_name].curr_room
+            leave_message = self.rooms[room].remove_client_from_room(sender_name)
+            if len(self.rooms[room].clients) > 0:
+                message_broadcast(self.rooms[room], sender_name, leave_message, self.debug)
             # then create new room.
             self.create_room(room_to_join, sender_name)
 
@@ -163,7 +169,7 @@ class IRC_App:
                 # remove them from their current room
                 '''NOTE: see note in app.add_user()!'''
                 cur_room = self.users[sender_name].curr_room
-                leave_message = self.leave_room(cur_room, sender_name, sender_socket)
+                leave_message = self.rooms[cur_room].remove_user_from_room(sender_name)
                 # make sure we don't broadcast to an empty room...
                 if len(self.rooms[cur_room].clients) > 0:
                     message_broadcast(self.rooms[cur_room], sender_name, leave_message, self.debug)
@@ -206,6 +212,7 @@ class IRC_App:
     def leave_room(self, room_to_leave, sender_name, sender_socket):
         '''
         leave a Chatroom() instance. will remove room if it's empty.
+        sends user back to #lobby.
 
         parameters
         -------------
@@ -450,18 +457,12 @@ class IRC_App:
 
                 else:
                     # leave room...
+                    # this sends the user back to the #lobby!
                     if self.debug:
                         print(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
                         logging.info(f'app.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...\n')
                     sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
                     self.leave_room(room_to_leave, sender_name, sender_socket)
-
-                    # ... then send back to #lobby
-                    if self.debug:
-                        print(f'\napp.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...')
-                        logging.info(f'app.message_parser() \nAttempting to send {sender_name} back to {DEFAULT_ROOM_NAME}...\n')
-                    sender_socket.send(f'Rejoining {DEFAULT_ROOM_NAME}...\n'.encode('ascii'))
-                    self.join_room(DEFAULT_ROOM_NAME, sender_name, sender_socket)
 
         # TEMP response
         else:
