@@ -84,7 +84,6 @@ def run_server():
 
             # add user to instance (and default room) and update user dict
             APP.add_user(new_user, client)
-            print(f'...created new chatroom: {DEFAULT_ROOM_NAME}')
 
             # create a new thread for this client to handle message I/O
             thread = Thread(target=handle, args=(client,))

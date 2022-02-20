@@ -39,7 +39,7 @@ def message_broadcast(room, sender_name, message, debug=False):
 class IRC_App:
     '''
     The main IRC application. One default room - #lobby - is created when
-    this class is instantiated. Irc_App() also keeps tracks of current users 
+    this class is instantiated. IRC_App() also keeps tracks of current users 
     and their socket info.
 
     IRC_App().message_parser(message:str) is the main point of entry for this
@@ -261,7 +261,7 @@ class IRC_App:
             if len(self.rooms[room_to_leave].clients) > 0:
                 message_broadcast(self.rooms[room_to_leave], sender_name, exit_message, self.debug)
 
-            # remove the room if its empty.
+            # # remove the room if its empty.
             # if len(self.rooms[room_to_leave].clients) == 0:
             #     # make sure we don't accidentally delete the default room!
             #     if room_to_leave != DEFAULT_ROOM_NAME:
@@ -382,22 +382,23 @@ class IRC_App:
             - leave current room. if you are in the main lobby, you will be asked if you 
               want to exit. if yes, then client will terminate.
 
-        - /users (opt) #room_name. 
-            - will list *all members* active in the application by default. 
-            - you can also specifiy n number of rooms to get user lists, assuming those rooms exist. 
-            - if not, it will be skipped and the user will be notified of its non-existance.
-
-        - /message <user>
+        - /message <user_name>
             - send a direct message to another user, regardless if they're in the same room with you.
+            - these are asynchronous between users.
         
         - /dms (opt) <from_user>
             - gets *all* your direct messages and who they're from by default.
             - specify <from_user> if you want to see messages from a specific person.
 
-        - /block <user>
+        - /whisper <user_name>
+            - directly message another user in real-time if they are in the same
+              chatroom as you. these messages won't be seen by other users in the 
+              room.
+
+        - /block <user_name>
             - block DM's from other users
 
-        - /unblock <user>
+        - /unblock <user_name>
             - unblocks a user
 
         - /help
@@ -432,12 +433,17 @@ class IRC_App:
 
         # Case where user wants to join a room:
         elif message.split()[0] == "/join":
+            # Case where user just enters '/join'
+
             # Case where there's a typo or user forgot to add a room argument
             if len(message.strip().split()) < 2:
                 if self.debug:
-                    print(f'\napp.message_parser() \nSending /join error message to socket: \n {sender_socket}')
-                    logging.info(f'app.message_parser() \nSending /join error message to socket: \n {sender_socket}\n')
+                    print(f'\napp.message_parser() /join \nSending /join error message to socket: \n {sender_socket}')
+                    logging.info(f'app.message_parser() /join \nSending /join error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
+
+            # Case where the user is already in the room
+            
             # Otherwise join or create the room.
             else:
                 self.join_room(message.split()[1], sender_name, sender_socket)
@@ -450,8 +456,8 @@ class IRC_App:
             # Case where user just submits "/leave"
             if len(message.split()) == 1:
                 if self.debug:
-                    print(f'\napp.message_parser() \nSending /leave error message to socket: \n {sender_socket}')
-                    logging.info(f'app.message_parser() \nSending /leave error message to socket: \n {sender_socket}\n')
+                    print(f'\napp.message_parser() /leave \nSending /leave error message to socket: \n {sender_socket}')
+                    logging.info(f'app.message_parser() /leave \nSending /leave error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n".encode('ascii'))
 
             # otherwise try to remove...
@@ -460,29 +466,17 @@ class IRC_App:
                 # case where user forgets to include "#" in "#room_name"
                 if room_to_leave[0] != "#":
                     if self.debug:
-                        print(f'\napp.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
-                        logging.info(f'app.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}\n')
+                        print(f'\napp.message_parser() /leave \nSending /leave #-syntax error message to socket: \n {sender_socket}')
+                        logging.info(f'app.message_parser() /leave \nSending /leave #-syntax error message to socket: \n {sender_socket}\n')
                     sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
-                 # leave room...
+                # leave room...
                 else:
                     if self.debug:
-                        print(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
-                        logging.info(f'app.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...\n')
+                        print(f'\napp.message_parser() /leave \nAttempting to remove {sender_name} from room {room_to_leave}...')
+                        logging.info(f'app.message_parser() /leave \nAttempting to remove {sender_name} from room {room_to_leave}...\n')
                     sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
-
-        # Case where user wants to list all (or some) active members in the app
-        # NOTE: must check for multiple room names! If more than one, compile into single list
-        elif message.split()[0] == "/users":
-            # case where we want users from a specific room
-            if message.split()[1][0] == '#':
-                self.get_users(message.split()[1][0], sender_socket)
-            # case where we want *all* active members in the instance
-            else:
-                user_list = self.get_all_users()
-                user_list = " \n".join(user_list)
-                sender_socket.send(user_list.encode('ascii'))
 
         # # Case where user wants to directly message another user
         # # NOTE: must check for username after /message too!'''    

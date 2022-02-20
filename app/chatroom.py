@@ -4,16 +4,6 @@ chatroom class module.
 
 import logging
 
-# Debugging stuff. Set DEBUG to True to activate logging.
-DEBUG = True
-if DEBUG:
-    # start a log file for debugging
-    logging.basicConfig(filename='IRC_Chatroom.log', 
-                        filemode='w', 
-                        level=logging.DEBUG, 
-                        format='%(asctime)s %(message)s', 
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-
 class Chatroom:
     '''
     chatroom class. keeps track of clients in a dictionary (key = username, value = user_socket)
@@ -21,6 +11,12 @@ class Chatroom:
 
     def __init__(self, room_name, debug=False):
         self.debug = debug
+        if self.debug:
+            logging.basicConfig(filename='IRC_Chatroom.log', 
+                    filemode='w', 
+                    level=logging.DEBUG, 
+                    format='%(asctime)s %(message)s', 
+                    datefmt='%m/%d/%Y %I:%M:%S %p')
 
         self.name = room_name
         # A dictionary of clients 
@@ -34,8 +30,7 @@ class Chatroom:
     # returns a list of users in this room:
     def get_users(self):
         user_list = list(self.clients.keys())
-        user_list = " \n".join(user_list)
-        return user_list 
+        return " \n".join(user_list) 
 
     # Adds a new client to a chatroom and notifies clients in that room
     def add_new_client_to_room(self, new_user):
@@ -66,10 +61,9 @@ class Chatroom:
         if self.debug:
             print(f'\nchatroom.remove_client_from_room() - Removing {user} from {self.name}...')
             logging.info(f'chatroom.remove_client_from_room() \nRemoving {user} from {self.name}...\n')
-        # delete the client
-        del self.clients[user]
-        return f"{user} has left the room!"
-
-    # returns a list of current users in this room as a string.
-    def list_users_in_room(self):
-        return list([key for key in self.clients])
+        if user in self.clients.keys():
+            # delete the client
+            del self.clients[user]
+            return f"{user} has left the room!"
+        else:
+            return f"Error: {user} not in this room!"
