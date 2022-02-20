@@ -276,6 +276,38 @@ class IRC_App:
 
             message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, join_message, self.debug)
 
+    # message another user privatly in a shared room
+    def send_whisper(self, sender, message, receiver):
+        '''
+        privately message another user in a shared chatroom.
+        ideally the message will only be seen between the two users,
+        even if there are other users in the room
+
+        parameters
+        ----------
+        - sender = '' (sender of the whisper)
+        - message = ''
+        - receiver = '' (receiver of the whisper)
+        '''
+        # ensure receiver is in this instance
+        if receiver not in self.users.keys():
+            self.users[sender].send(f'Error: {receiver} is not in app instance!'.encode('ascii'))
+
+        # ensure both sender and receiver are in the same room
+        s_room = self.users[sender].curr_room
+        r_room = self.users[receiver].curr_room
+        if s_room != r_room:
+            self.users[sender].send(f'Error: {receiver} not in the same room!'.encode('ascii'))
+
+        # ensure receiver hasn't blocked sender
+        if self.users[receiver].has_blocked(sender):
+            self.users[sender].send(f'Error: {receiver} has blocked you!'.encode('ascii'))
+
+        # send whisper via User() objects
+        else:
+            message = f'{sender} : {message}'
+            self.users[receiver].whisper(sender, message)
+
     # directly message another user
     def send_dm(self, sender, message, receiver):
         '''
@@ -307,7 +339,7 @@ class IRC_App:
             # User() will send message via the user's socket.
             receiver_.get_dm(sender, message)
 
-    def get_dm(self, receiver, sender=None):
+    def get_dms(self, receiver, sender=None):
         '''
         gets a user's direct messages. works with the User() object.
         this also sends the 
@@ -478,20 +510,6 @@ class IRC_App:
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
 
-        # # Case where user wants to directly message another user
-        # # NOTE: must check for username after /message too!'''    
-        # elif message.split()[0] == "/message":
-        #     # case where client doesn't include a user_name
-        #     if len(message.split()) == 1:
-        #         sender_socket.send('Error: must include a username. /message <user_name>'.encode('ascii'))
-        #     # case where user tries to message more than one person at a time
-        #     elif len(message.split()) > 2:
-        #         sender_socket.send('Error:  can only DM one user at a time!'.encode('ascii'))
-        #     # otherwise send message (blocked users are handled elsewhere!)
-        #     else:
-        #         receiver = message.split()[1]
-        #         self.send_dm(sender_name, message, receiver)
-
         # # Case where a user wants to check their direct messages
         # elif message.split()[0] == "/dms":
         #     # check if there's a specific user they're looking for
@@ -509,7 +527,24 @@ class IRC_App:
 
         #     # otherwise send all the dms
         #     self.get_dm(sender_name)
-        
+
+        # # Case where user wants to directly message another user
+        # # NOTE: must check for username after /message too!'''    
+        # elif message.split()[0] == "/message":
+        #     # case where client doesn't include a user_name
+        #     if len(message.split()) == 1:
+        #         sender_socket.send('Error: must include a username. /message <user_name>'.encode('ascii'))
+        #     # case where user tries to message more than one person at a time
+        #     elif len(message.split()) > 2:
+        #         sender_socket.send('Error:  can only DM one user at a time!'.encode('ascii'))
+        #     # otherwise send message (blocked users are handled elsewhere!)
+        #     else:
+        #         receiver = message.split()[1]
+        #         self.send_dm(sender_name, message, receiver)
+
+        # # Case where a user wants to whisper to another user in the same chatroom
+        # elif message.split()[0] == '/whisper':
+
         # # Case where user wants to block DM's from another user
         # elif message.split()[0] == "/block":
         #     # case where the users messes up, yet again
