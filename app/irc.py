@@ -116,6 +116,14 @@ class IRC_App:
         else:
             print(f'\napp.remove)user \n{user_name} is not in the server!')
     
+    # get a list of active users in a specific room
+    def get_users(self, room, sender_socket):
+        if room in self.rooms.keys():
+            users = self.rooms[room].get_users()
+            sender_socket.send(str(users).encode('ascii'))
+        else:
+            sender_socket.send(f'{room} does not exist!'.encode('ascii'))
+
     # get a list of all active users
     def get_all_users(self):
         '''
@@ -154,6 +162,7 @@ class IRC_App:
             back to lobby if they're trying to join a newly created room.'''
             room = self.users[sender_name].curr_room
             leave_message = self.rooms[room].remove_client_from_room(sender_name)
+            # make sure we don't broadcast to an empty room...
             if len(self.rooms[room].clients) > 0:
                 message_broadcast(self.rooms[room], sender_name, leave_message, self.debug)
             # then create new room.
@@ -454,46 +463,26 @@ class IRC_App:
                         print(f'\napp.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}')
                         logging.info(f'app.message_parser() \nSending /leave #-syntax error message to socket: \n {sender_socket}\n')
                     sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
-
+                 # leave room...
                 else:
-                    # leave room...
-                    # this sends the user back to the #lobby!
                     if self.debug:
                         print(f'\napp.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...')
                         logging.info(f'app.message_parser() \nAttempting to remove {sender_name} from room {room_to_leave}...\n')
                     sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
+                    # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
 
-        # TEMP response
-        else:
-            sender_socket.send(f'{message.split()[0]} command not ready!'.encode('ascii'))
-
-        # # Case where user wants to list all (or some) active members in the app
-        # # NOTE: must check for multiple room names! If more than one, compile into single list
-        # elif message.split()[0] == "/users":
-        #     # case where we want users from specific rooms
-        #     if len(message.split()) > 1:
-        #         # get any room names from the command
-        #         message_ = message.split()
-        #         rooms_to_list = []
-        #         for word in message_:
-        #             if word[0] == '#':
-        #                 rooms_to_list.append(word)
-        #         # get users from each room
-        #         user_list = []
-        #         for room in self.rooms.keys():
-        #             # add room name up front before getting users
-        #             user_list.append(f'\n{room} users:\n')
-        #             user_list.extend(self.rooms[room].list_users_in_room())
-        #         user_list = " \n".join(user_list)
-        #         # send list back to client
-        #         sender_socket.send(user_list.encode('ascii'))
-
-        #     # case where we want *all* active members in the instance
-        #     else:
-        #         user_list = self.get_all_users()
-        #         user_list = " \n".join(user_list)
-        #         sender_socket.send(user_list.encode('ascii'))
+        # Case where user wants to list all (or some) active members in the app
+        # NOTE: must check for multiple room names! If more than one, compile into single list
+        elif message.split()[0] == "/users":
+            # case where we want users from a specific room
+            if message.split()[1][0] == '#':
+                self.get_users(message.split()[1][0], sender_socket)
+            # case where we want *all* active members in the instance
+            else:
+                user_list = self.get_all_users()
+                user_list = " \n".join(user_list)
+                sender_socket.send(user_list.encode('ascii'))
 
         # # Case where user wants to directly message another user
         # # NOTE: must check for username after /message too!'''    
@@ -556,3 +545,7 @@ class IRC_App:
         #     # send to User() to block each name sent in
         #     for name in to_unblock:
         #         self.unblock(sender_name, name)
+
+        # TEMP response
+        else:
+            sender_socket.send(f'{message.split()[0]} is not a valid command!'.encode('ascii'))
