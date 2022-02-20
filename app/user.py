@@ -36,28 +36,13 @@ class User:
     def send(self, message):
         '''
         send a message via this user's socket object.
-        message must be a string already encoded to ascii!
+        ***message must be a string already encoded to ascii!***
         '''
         self.socket.send(message)
-    
-    def whisper(self, sender, message):
-        '''
-        get a whisper message from another user that is in the same room
-        as this user.
-
-        parameters
-        ------------
-        - sender = '' sender name
-        - message = '' message text
-
-        must be in <sender> : <message> format prior to calling this method.
-        '''
-        if sender not in self.blocked:
-            self.send(message.encode('ascii'))
 
     def get_dm(self, sender, message):
         '''
-        ability to recieve DM's from another user.
+        ability to receive DM's from another user.
         if the user isn't blocked, then the message will be saved to self.dms
         with the senders name as the key
         '''
@@ -70,8 +55,20 @@ class User:
             else:
                 self.send(f'No messages from {sender}'.encode('ascii'))
         else:
-            self.socket.send(f'{sender} is blocked!'.encode('ascii'))
-    
+            self.send(f'{sender} is blocked!'.encode('ascii'))
+
+    def read_dm(self, sender):
+        '''
+        displays a message from a single user
+        '''
+        if len(self.dms) > 0:
+            if sender in self.dms.keys():
+                self.send(f'{sender}: \n{self.dms[sender]}\n'.encode('ascii'))
+            else:
+                self.send(f'No messages from {sender}!\n'.encode('ascii'))
+        else:
+            self.send(f'No messages!'.encode('ascii'))
+
     def read_all_dms(self):
         '''
         displays and returns a list of messages from other users. 
@@ -83,17 +80,7 @@ class User:
             dms_str = dms.join(" \n")
             self.send(dms_str.encode('ascii'))
         else:
-            self.send('No direct messages'.encode('ascii'))
-
-    def read_dm(self, sender):
-        '''
-        displays a message from a single user
-        '''
-        if len(self.dms) > 0:
-            if sender in self.dms.keys():
-                self.send(f'{sender}: \n{self.dms[sender]}\n'.encode('ascii'))
-            else:
-                self.send(f'No messages from {sender}!\n'.encode('ascii'))
+            self.send('No direct messages!'.encode('ascii'))
     
     def has_blocked(self, sender):
         '''
@@ -107,7 +94,7 @@ class User:
         '''
         if sender not in self.blocked:
             self.blocked.append(sender)
-            self.send(f'{sender} has been blocked.'.encode('ascii'))
+            self.send(f'{sender} has been blocked!'.encode('ascii'))
         else:
             self.send(f'{sender} is already blocked.'.encode('ascii'))
     
@@ -119,4 +106,4 @@ class User:
             self.blocked.remove(sender)
             self.send(f'{sender} has been unblocked!'.encode('ascii'))
         else:
-            self.send(f'{sender} was not blocked!'.encode('ascii'))
+            self.send(f'{sender} was not blocked.'.encode('ascii'))

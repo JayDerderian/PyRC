@@ -293,53 +293,45 @@ class IRC_App:
         if receiver not in self.users.keys():
             self.users[sender].send(f'Error: {receiver} is not in app instance!'.encode('ascii'))
 
-        # ensure both sender and receiver are in the same room
-        s_room = self.users[sender].curr_room
-        r_room = self.users[receiver].curr_room
-        if s_room != r_room:
-            self.users[sender].send(f'Error: {receiver} not in the same room!'.encode('ascii'))
-
         # ensure receiver hasn't blocked sender
         if self.users[receiver].has_blocked(sender):
             self.users[sender].send(f'Error: {receiver} has blocked you!'.encode('ascii'))
 
         # send whisper via User() objects
         else:
-            message = f'{sender} : {message}'
-            self.users[receiver].whisper(sender, message)
+            # ensure both sender and receiver are in the same room
+            if self.users[sender].curr_room != self.users[receiver].curr_room:
+                self.users[sender].send(f'Error: {receiver} is not in the same room!'.encode('ascii'))
+            # send message
+            else:
+                message = f'<whisper> {sender} : {message}'.encode('ascii')
+                self.users[receiver].send(message)
 
     # directly message another user
     def send_dm(self, sender, message, receiver):
         '''
         directly message another user. 
-        wont send message if sender has been blocked by receiver!
-
-        this works with the User() object.
 
         parameters
         ------------
         - sender = '' (name of sender)
         - message = ''
         - reciever = '' (name of sender)
+
+        wont send message if sender has been blocked by receiver!
+        receiver gets a notification message that they've received
+        a direct message from another user.
         '''
-        # find receiver
-        for u in self.users:
-            if u == receiver:
-                receiver_ = self.users[receiver]
-                break
-        # find sender socket to send return message
-        for s in self.users:
-            if s == sender:
-                sender_ = self.users[sender]
-        # make sure sender isn't blocked by receiver
-        if receiver_.has_blocked(sender):
-            sender_.socket.send(f'You were blocked by {receiver}!'.encode('ascii'))
+        # make sure receiver is in the instance
+        if receiver not in self.users.keys():
+            self.users[sender].send(f'Error: {receiver} not in app instance!'.encode('ascii'))
         else:
             # save message to User() instance. 
-            # User() will send message via the user's socket.
-            receiver_.get_dm(sender, message)
+            # User() will send notification message to receiver.
+            # User() will also check whether sender was blocked by receiver.
+            self.users[receiver].get_dm(sender, message)
 
-    def get_dms(self, receiver, sender=None):
+    def read_dms(self, receiver, sender=None):
         '''
         gets a user's direct messages. works with the User() object.
         this also sends the 
@@ -350,15 +342,10 @@ class IRC_App:
         - sender = None (set to user_name string if user wants 
                          dms from a specific user)
         '''
-        # find receiver
-        for u in self.users:
-            if u == receiver:
-                user = self.users[receiver]
-                break
         if sender is None:
-            return user.read_all_dms()
+            return self.users[receiver].read_all_dms()
         else:
-            return user.read_dms(sender)
+            return self.users[receiver].read_dms(sender)
     
     # block a user
     def block(self, user_name, to_block):
@@ -366,10 +353,7 @@ class IRC_App:
         blocks a user from DM'ing someone. 
         this is a wrapper for User().block(user_name)
         '''
-        for u in self.users:
-            if u == user_name:
-                self.users[u].block(to_block)
-                break
+        self.users[user_name].block(to_block)
 
     # unblock a user
     def unblock(self, user_name, to_unblock):
@@ -377,10 +361,7 @@ class IRC_App:
         unblocks a user. 
         this is a wrapper for User().unblock(user_name)
         '''
-        for u in self.users:
-            if u == user_name:
-                self.users[u].unblock(to_unblock)
-                break
+        self.users[user_name].unblock(to_unblock)
 
     # main message parser.
     def message_parser(self, message, sender_name, sender_socket):
@@ -447,7 +428,6 @@ class IRC_App:
 
         NOTE: Will need to coordinate with the CLI instance on the Client application!
         '''
-        
         if self.debug:
             print(f"\napp.message_parser() \nsender_name: {sender_name} \nmessage: {message}")
             print(f'message as word list: {message.split()}')
@@ -510,37 +490,31 @@ class IRC_App:
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
 
+        # Case where user wants to directly message another user
+        elif message.split()[0] == "/message":
+            # case where client doesn't include a user_name
+            if len(message.split()) == 1:
+                sender_socket.send('Error: /message requires a username argument. \nex: /message <user_name>'.encode('ascii'))
+            # case where user tries to message more than one person at a time
+            elif len(message.split()) > 2:
+                sender_socket.send('Error: can only DM one user at a time!'.encode('ascii'))
+            # otherwise send message (blocked users are handled elsewhere!)
+            else:
+                receiver = message.split()[1]
+                self.send_dm(sender_name, message, receiver)
+
         # # Case where a user wants to check their direct messages
         # elif message.split()[0] == "/dms":
         #     # check if there's a specific user they're looking for
         #     if len(message.split()) > 1:
-        #         users = []
-        #         message_ = message.split()
-        #         for word in message_:
-        #             # skip the dm command
-        #             if word[0] == '/':
-        #                 continue
-        #             users.append(word)
-        #         # send each DM from each user
-        #         for u in users:
-        #             self.get_dm(sender_name, sender=users[u])    
-
-        #     # otherwise send all the dms
-        #     self.get_dm(sender_name)
-
-        # # Case where user wants to directly message another user
-        # # NOTE: must check for username after /message too!'''    
-        # elif message.split()[0] == "/message":
-        #     # case where client doesn't include a user_name
-        #     if len(message.split()) == 1:
-        #         sender_socket.send('Error: must include a username. /message <user_name>'.encode('ascii'))
-        #     # case where user tries to message more than one person at a time
-        #     elif len(message.split()) > 2:
-        #         sender_socket.send('Error:  can only DM one user at a time!'.encode('ascii'))
-        #     # otherwise send message (blocked users are handled elsewhere!)
+        #         user = message.split()[1]
+        #         if user in self.users.keys():
+        #             self.read_dms(sender_name, user)
+        #         else:
+        #             sender_socket.send(f'Error: {user} not found!'.encode('ascii'))
         #     else:
-        #         receiver = message.split()[1]
-        #         self.send_dm(sender_name, message, receiver)
+        #         # otherwise retrieve all dms for this user
+        #         self.read_dms(sender_name)
 
         # # Case where a user wants to whisper to another user in the same chatroom
         # elif message.split()[0] == '/whisper':
