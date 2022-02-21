@@ -40,20 +40,18 @@ class User:
         '''
         self.socket.send(message)
 
-    def get_dm(self, sender, message):
+    def receive_dm(self, sender, message):
         '''
         ability to receive DM's from another user.
         if the user isn't blocked, then the message will be saved to self.dms
         with the senders name as the key
         '''
+        # are there messages from sender?
         if sender not in self.blocked:
-            # are there messages from sender?
-            if sender in self.dms.keys():
-                self.dms[sender] = message
-                # send an alert message
-                self.send(f'New message from {sender}! \nUse /dms {sender} to read'.encode('ascii'))
-            else:
-                self.send(f'No messages from {sender}'.encode('ascii'))
+            # store the message
+            self.dms[sender] = message
+            # send an alert message
+            self.send(f'New message from {sender}! \nUse /dms {sender} to read'.encode('ascii'))
         else:
             self.send(f'{sender} is blocked!'.encode('ascii'))
 

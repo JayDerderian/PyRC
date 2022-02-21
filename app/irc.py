@@ -114,7 +114,7 @@ class IRC_App:
         if user_name in self.users.keys():
             del self.users[user_name]
         else:
-            print(f'\napp.remove)user \n{user_name} is not in the server!')
+            print(f'\napp.remove_user() \n{user_name} is not in the server!')
     
     # get a list of active users in a specific room
     def get_users(self, room, sender_socket):
@@ -329,7 +329,7 @@ class IRC_App:
             # save message to User() instance. 
             # User() will send notification message to receiver.
             # User() will also check whether sender was blocked by receiver.
-            self.users[receiver].get_dm(sender, message)
+            self.users[receiver].receive_dm(sender, message)
 
     def read_dms(self, receiver, sender=None):
         '''
@@ -380,7 +380,7 @@ class IRC_App:
         no need for a #room_name specification. 
 
         #lobby is the default room that any user can be in at any given time, 
-        and is the one new users are sent to by default.
+        and is where new users are sent to when they first join the app instance.
 
         commands
         ----------
@@ -420,10 +420,6 @@ class IRC_App:
         - /quit
             - leave current instance.
 
-        TODO: add /whisper option for direct, real-time messages between two users! 
-              either create a single room for two users or connect two User() instances.
-              both will contain user socket objects.
-
         NOTE: /quit and /help are handled on the client side!
 
         NOTE: Will need to coordinate with the CLI instance on the Client application!
@@ -445,16 +441,17 @@ class IRC_App:
 
         # Case where user wants to join a room:
         elif message.split()[0] == "/join":
-            # Case where user just enters '/join'
-
             # Case where there's a typo or user forgot to add a room argument
             if len(message.strip().split()) < 2:
                 if self.debug:
                     print(f'\napp.message_parser() /join \nSending /join error message to socket: \n {sender_socket}')
                     logging.info(f'app.message_parser() /join \nSending /join error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
-
+            
+            # '''TODO: implement this case!!'''
             # Case where the user is already in the room
+            elif message.split()[1] == self.users[sender_name].curr_room:
+                sender_socket.send(f'Error: you are already in {message.split()[1]}!')
             
             # Otherwise join or create the room.
             else:
