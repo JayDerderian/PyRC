@@ -347,7 +347,7 @@ class IRC_App:
             if self.debug:
                 print(f'\napp.send_dm() \nsending {receiver} message: {message}!')
                 logging.info(f'app.send_dm() \nsender: {receiver} \nmessage: {message}!\n')
-            self.users[receiver].receive_dm(sender, message)
+            self.users[receiver].get_dm(sender, message)
 
     def read_dms(self, receiver, sender=None):
         '''
@@ -363,7 +363,7 @@ class IRC_App:
         if sender is None:
             return self.users[receiver].read_all_dms()
         else:
-            return self.users[receiver].read_dms(sender)
+            return self.users[receiver].read_dm(sender)
     
     # block a user
     def block(self, user_name, to_block):
@@ -529,17 +529,17 @@ class IRC_App:
                 if self.debug:
                     print(f'\napp.message_parser() \nremoving /message and @user_name from: {message.split()}')
                     logging.info(f'app.message_parser() \nremoving /message and @user_name from: {message.split()}\n')
-                message_text = message.split()
+                message_ = message.split()
                 # remove command
-                message_text.pop(0)
+                message_.pop(0)
                 # get receiver's name & remove @ symbol
-                receiver = message_text[0]
+                receiver = message_[0]
                 rec = [w for w in receiver]
                 rec.remove('@')
                 receiver = ''.join(rec)
                 # remove username from message text
-                message_text.pop(0)
-                message_text = ''.join('')
+                message_.pop(0)
+                message_text = ''.join(message_)
                 if self.debug:
                     print(f'\napp.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}')
                     logging.info(f'app.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}\n')
@@ -547,23 +547,33 @@ class IRC_App:
                 self.send_dm(sender_name, message_text, receiver)
 
                 
-        # # Case where a user wants to check their direct messages
-        # elif message.split()[0] == "/dms":
+        # Case where a user wants to check their direct messages
+        elif message.split()[0] == "/dms":
             '''
-            syntax - /dms (opt) @<user_name> 
+            syntax - /dms (opt) @<sender_name> 
             '''
-        #     # check if there's a specific user they're looking for
-        #     if len(message.split()) > 1:
-        #         user = message.split()[1]
-        #         if user[0] == '@':
-        #             user.pop(0) # remove @ symbol
-            #         if user in self.users.keys():
-            #             self.read_dms(sender_name, user)
-            #         else:
-            #             sender_socket.send(f'Error: {user} not found!'.encode('ascii'))
-        #     else:
-        #         # otherwise retrieve all dms for this user
-        #         self.read_dms(sender_name)
+            # check if there's a specific user they're looking for
+            if len(message.split()) > 1:
+                if self.debug:
+                    print('\napp.message_parser() \n/dms case')
+                    logging.info('app.message_parser() \n/dms case\n')
+                dm_sender = message.split()[1]
+                if dm_sender[0] == '@':
+                    # remove @ symbol
+                    dm_sender = [char for char in dm_sender]
+                    dm_sender.remove('@')
+                    dm_sender = ''.join(dm_sender)
+                    # get dm's
+                    if self.debug:
+                        print(f'\napp.message_parser() \nsender: {dm_sender} sent to self.read_dms()')
+                        logging.info(f'app.message_parser() \nsender: {dm_sender} sent to self.read_dms()\n')
+                    self.read_dms(sender_name, dm_sender)
+                else:
+                    sender_socket.send(f'Error: /message requires a "@" character to denote a user, ie @user_name'.encode('ascii'))
+            # otherwise just get all their dms
+            else:
+                # otherwise retrieve all dms for this user
+                self.read_dms(sender_name)
 
         # # Case where a user wants to whisper to another user in the same chatroom
         # elif message.split()[0] == '/whisper':
