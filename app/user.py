@@ -67,7 +67,7 @@ class User:
             if sender in self.dms.keys():
                 if self.debug:
                     logging.info(f'user.read_dm() \nsender: {sender} \nmessage: {self.dms[sender]}\n')
-                self.send(f'{sender}: \n{self.dms[sender]}\n'.encode('ascii'))
+                self.send(f'{sender}: \n{self.dms[sender]}'.encode('ascii'))
             else:
                 if self.debug:
                     logging.error(f'user.read_dm() \nERROR: no messages from user: {sender}!\n')
@@ -84,7 +84,7 @@ class User:
         dms = []
         if len(self.dms) > 0:
             for sender in self.dms:
-                dms.append(f'{sender} : \n{self.dms[sender]}\n')
+                dms.append(f'{sender} : \n{self.dms[sender]}')
             dms_str = ''.join(dms)
             if self.debug:
                 print(f'\nuser.read_all_dms() \nuser: {self.name} \nmessages: {dms_str}')

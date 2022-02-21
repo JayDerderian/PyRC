@@ -539,7 +539,7 @@ class IRC_App:
                 receiver = ''.join(rec)
                 # remove username from message text
                 message_.pop(0)
-                message_text = ''.join(message_)
+                message_text = ' '.join(message_)
                 if self.debug:
                     print(f'\napp.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}')
                     logging.info(f'app.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}\n')
