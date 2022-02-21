@@ -22,7 +22,6 @@ CLIENT_COMMANDS = {
     "Leave":     "  /leave :   Removes client from a room. Removes room     ",
     "Leave2":    "             from server when the last client leaves      ",
     "Leave3":    "               ex: /leave #dnd                            ",
-    "Members":   "  /members : Lists all clients in a room.                 ",
     "Quit":      "  /quit :    Disconnects client from the server.          ",
     "Bottom":    "----------------------------------------------------------\n"
 }

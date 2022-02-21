@@ -8,7 +8,9 @@ This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
 '''
 
+from email import message
 import logging
+from ntpath import join
 
 from app.user import User
 from app.chatroom import Chatroom
@@ -92,7 +94,10 @@ class IRC_App:
                      does python make a copy of the object (pass by value) when passing
                      objects as arguments? not sure if self.users[user_name] and
                      chatroom.clients[user_name] will have the same value for curr_room...'''
+            join_message = f'{user_name} joined {DEFAULT_ROOM_NAME}!'
             self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(self.users[user_name])
+            # send join message to room
+            message_broadcast(self.rooms[DEFAULT_ROOM_NAME], user_name, join_message, self.debug)
             if self.debug:
                 logging.info(f'app.add_user() \nadding {user_name} and creating User() object: \n{self.users[user_name]}\n')
 
@@ -157,16 +162,17 @@ class IRC_App:
         # Case where this room doesn't already exist
         if room_to_join not in self.rooms.keys():
             # first remove user from their current room
-            '''NOTE: double check against self.leave().
-            maybe just use chatroom.remove_user_from_room()? don't want to send user
-            back to lobby if they're trying to join a newly created room.'''
             room = self.users[sender_name].curr_room
-            leave_message = self.rooms[room].remove_client_from_room(sender_name)
-            # make sure we don't broadcast to an empty room...
-            if len(self.rooms[room].clients) > 0:
-                message_broadcast(self.rooms[room], sender_name, leave_message, self.debug)
-            # then create new room.
-            self.create_room(room_to_join, sender_name)
+            if self.rooms[room].remove_client_from_room(sender_name):
+                leave_message = f'{sender_name} left {room}!'
+                # make sure we don't broadcast to an empty room...
+                if len(self.rooms[room].clients) > 0:
+                    message_broadcast(self.rooms[room], sender_name, leave_message, self.debug)
+                # then create new room.
+                self.create_room(room_to_join, sender_name)
+                sender_socket.send(f'Joined {room_to_join}!'.encode('ascii'))
+            else:
+                sender_socket.send(f'Error: Unable to leave {room}!'.encode('ascii'))
 
         # Case where it DOES already exist
         else:
@@ -176,16 +182,19 @@ class IRC_App:
             # Leave current room, join new room
             else:
                 # remove them from their current room
-                '''NOTE: see note in app.add_user()!'''
                 cur_room = self.users[sender_name].curr_room
-                leave_message = self.rooms[cur_room].remove_user_from_room(sender_name)
-                # make sure we don't broadcast to an empty room...
-                if len(self.rooms[cur_room].clients) > 0:
-                    message_broadcast(self.rooms[cur_room], sender_name, leave_message, self.debug)
+                if self.rooms[cur_room].remove_user_from_room(sender_name):
+                    leave_message = f'{sender_name} left {cur_room}!'
+                    # make sure we don't broadcast to an empty room...
+                    if len(self.rooms[cur_room].clients) > 0:
+                        message_broadcast(self.rooms[cur_room], sender_name, leave_message, self.debug)
 
-                # add to room
-                join_message = self.rooms[room_to_join].add_client_to_room(self.users[sender_name])
-                message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
+                    # add to room
+                    join_message = f'{sender_name} joined {room_to_join}!'
+                    self.rooms[room_to_join].add_client_to_room(self.users[sender_name])
+                    message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
+                else:
+                    sender_socket.send(f'Error: Unable to join {room_to_join}!'.encode('ascii'))
 
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
@@ -202,18 +211,19 @@ class IRC_App:
         - sender_socket = sender socket() object
         '''
         # create room, add user, and update their info
-        self.rooms[room_to_join] = Chatroom(room_name = room_to_join, 
-                                            debug = self.debug)
-        '''NOTE: see note in app.add_user()!'''
-        join_message = self.rooms[room_to_join].add_new_client_to_room(self.users[sender_name]) 
-
+        self.rooms[room_to_join] = Chatroom(room_name = room_to_join, debug = self.debug)
+        self.rooms[room_to_join].add_new_client_to_room(self.users[sender_name]) 
         if self.debug:
             print(f'\napp.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}')
-            print(f'\napp.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}')
+            print(f'\napp.create_room() \ncurrent members: {str(self.rooms[room_to_join].get_users())}')
             logging.info(f'app.create_room() \ncreating new Chatroom() instance: \n{self.rooms[room_to_join]}\n')
-            logging.info(f'app.create_room() \ncurrent members: {str(self.rooms[room_to_join].list_users_in_room())}\n')
+            logging.info(f'app.create_room() \ncurrent members: {str(self.rooms[room_to_join].get_users())}\n')
 
         # send join message
+        join_message = f'{sender_name} joined {room_to_join}!'
+        if self.debug:
+            print(f'\napp.create_room() \nSending join message: {join_message}')
+            logging.info(f'app.create_room() \nSending join message: {join_message}\n')
         message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
 
     # Check if the room exists, check if user is in the room,
@@ -251,30 +261,32 @@ class IRC_App:
                 logging.info(f'app.leave_room() \nRemoving {sender_name} from {room_to_leave}...\n')
 
             # remove user from room
-            '''NOTE: see note in app.add_user()!'''
-            exit_message = self.rooms[room_to_leave].remove_client_from_room(sender_name)
-            if self.debug:
-                print(f'\napp.leave_room() - sending exit message: {exit_message} \nto sender_socket: {sender_socket}')
-                logging.info(f'app.leave_room() \nsending exit message: {exit_message} \nto sender_socket: {sender_socket}\n')
-            
-            # make sure we don't broadcast to an empty room...
-            if len(self.rooms[room_to_leave].clients) > 0:
-                message_broadcast(self.rooms[room_to_leave], sender_name, exit_message, self.debug)
+            if self.rooms[room_to_leave].remove_client_from_room(sender_name):
+                exit_message = f'{sender_name} left {room_to_leave}!'
+                if self.debug:
+                    print(f'\napp.leave_room() - sending exit message: {exit_message} \nto sender_socket: {sender_socket}')
+                    logging.info(f'app.leave_room() \nsending exit message: {exit_message} \nto sender_socket: {sender_socket}\n')
+                
+                # make sure we don't broadcast to an empty room...
+                if len(self.rooms[room_to_leave].clients) > 0:
+                    message_broadcast(self.rooms[room_to_leave], sender_name, exit_message, self.debug)
 
-            # # remove the room if its empty.
-            # if len(self.rooms[room_to_leave].clients) == 0:
-            #     # make sure we don't accidentally delete the default room!
-            #     if room_to_leave != DEFAULT_ROOM_NAME:
-            #         del self.rooms[room_to_leave]
+                # # remove the room if its empty.
+                # if len(self.rooms[room_to_leave].clients) == 0:
+                #     # make sure we don't accidentally delete the default room!
+                #     if room_to_leave != DEFAULT_ROOM_NAME:
+                #         del self.rooms[room_to_leave]
 
-            # send user back to #lobby
-            '''NOTE: see note in app.add_user()!'''
-            join_message = self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(self.users[sender_name])
-            if self.debug:
-                print(f'\napp.leave_room() - sending join message: {join_message} \nto sender_socket: {sender_socket}')
-                logging.info(f'app.leave_room() \nsending join message: {join_message} \nto sender_socket: {sender_socket}\n')
+                # send user back to #lobby
+                join_message = f'{sender_name} joined {DEFAULT_ROOM_NAME}!'
+                self.rooms[DEFAULT_ROOM_NAME].add_new_client_to_room(self.users[sender_name])
+                if self.debug:
+                    print(f'\napp.leave_room() - sending join message: {join_message} \nto sender_socket: {sender_socket}')
+                    logging.info(f'app.leave_room() \nsending join message: {join_message} \nto sender_socket: {sender_socket}\n')
 
-            message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, join_message, self.debug)
+                message_broadcast(self.rooms[DEFAULT_ROOM_NAME], sender_name, join_message, self.debug)
+            else:
+                sender_socket.send(f'Error: Unable to leave {room_to_leave} for some reason?'.encode('ascii'))
 
     # message another user privatly in a shared room
     def send_whisper(self, sender, message, receiver):
@@ -395,7 +407,7 @@ class IRC_App:
             - leave current room. if you are in the main lobby, you will be asked if you 
               want to exit. if yes, then client will terminate.
 
-        - /message <user_name>
+        - /message @<user_name> <message>
             - send a direct message to another user, regardless if they're in the same room with you.
             - these are asynchronous between users.
         
@@ -403,7 +415,7 @@ class IRC_App:
             - gets *all* your direct messages and who they're from by default.
             - specify <from_user> if you want to see messages from a specific person.
 
-        - /whisper <user_name>
+        - /whisper @<user_name> <message>
             - directly message another user in real-time if they are in the same
               chatroom as you. these messages won't be seen by other users in the 
               room.
@@ -447,8 +459,7 @@ class IRC_App:
                     print(f'\napp.message_parser() /join \nSending /join error message to socket: \n {sender_socket}')
                     logging.info(f'app.message_parser() /join \nSending /join error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
-            
-            # '''TODO: implement this case!!'''
+
             # Case where the user is already in the room
             elif message.split()[1] == self.users[sender_name].curr_room:
                 sender_socket.send(f'Error: you are already in {message.split()[1]}!')
@@ -487,34 +498,55 @@ class IRC_App:
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
 
-        # Case where user wants to directly message another user
-        elif message.split()[0] == "/message":
-            # case where client doesn't include a user_name
-            if len(message.split()) == 1:
-                sender_socket.send('Error: /message requires a username argument. \nex: /message <user_name>'.encode('ascii'))
-            # case where user tries to message more than one person at a time
-            elif len(message.split()) > 2:
-                sender_socket.send('Error: can only DM one user at a time!'.encode('ascii'))
-            # otherwise send message (blocked users are handled elsewhere!)
-            else:
-                receiver = message.split()[1]
-                self.send_dm(sender_name, message, receiver)
+        # # Case where user wants to directly message another user
+        # elif message.split()[0] == "/message":
+        #     '''
+        #     syntax - /message @user_name <message>
+        #     '''
+        #     # case where client doesn't include a user_name
+        #     if len(message.split()) == 1:
+        #         sender_socket.send('Error: /message requires a username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
+        #     # case where user tries to message more than one person at a time.
+        #     elif message.split().count('@') > 1:
+        #         sender_socket.send('Error: /message only takes one username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
+        #     # remove /message and @user_name, then send the remaining message
+        #     else:
+        #         message_text = message.split()
+        #         for word in message_text:
+        #             # remove command
+        #             if word[0] == '/':
+        #                 message_text.remove(word)
+        #             # get receiver's username
+        #             elif word[0] == '@':
+        #                 receiver = [char for char in word]
+        #                 receiver.remove('@')
+        #                 receiver = str(receiver)
+        #                 message_text.remove(receiver)
+        #         # send
+        #         self.send_dm(sender_name, message_text, receiver)
 
+                
         # # Case where a user wants to check their direct messages
         # elif message.split()[0] == "/dms":
+            '''
+            syntax - /dms (opt) @<user_name> 
+            '''
         #     # check if there's a specific user they're looking for
         #     if len(message.split()) > 1:
         #         user = message.split()[1]
-        #         if user in self.users.keys():
-        #             self.read_dms(sender_name, user)
-        #         else:
-        #             sender_socket.send(f'Error: {user} not found!'.encode('ascii'))
+        #         if user[0] == '@':
+        #             user.pop(0) # remove @ symbol
+            #         if user in self.users.keys():
+            #             self.read_dms(sender_name, user)
+            #         else:
+            #             sender_socket.send(f'Error: {user} not found!'.encode('ascii'))
         #     else:
         #         # otherwise retrieve all dms for this user
         #         self.read_dms(sender_name)
 
         # # Case where a user wants to whisper to another user in the same chatroom
         # elif message.split()[0] == '/whisper':
+
 
         # # Case where user wants to block DM's from another user
         # elif message.split()[0] == "/block":

@@ -42,12 +42,11 @@ class Chatroom:
         - new_user = User() object
         '''
         if self.debug:
-            print(f'\nchatroom.add_new_client_to_room() - Adding {new_user.name} to {self.name}...')
+            print(f'\nchatroom.add_new_client_to_room() \nAdding {new_user.name} to {self.name}...')
             logging.info(f'chatroom.add_new_client_to_room() \nAdding: {new_user.name} \nsocket: {new_user.socket}\n')
         # add the client
         self.clients[new_user.name] = new_user
         new_user.curr_room = self.name
-        return f"{new_user.name} has joined the room!"
         
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_room(self, user):
@@ -59,11 +58,11 @@ class Chatroom:
         - client_name = '' (client to remove)
         '''
         if self.debug:
-            print(f'\nchatroom.remove_client_from_room() - Removing {user} from {self.name}...')
+            print(f'\nchatroom.remove_client_from_room() \nRemoving {user} from {self.name}...')
             logging.info(f'chatroom.remove_client_from_room() \nRemoving {user} from {self.name}...\n')
         if user in self.clients.keys():
             # delete the client
             del self.clients[user]
-            return f"{user} has left the room!"
+            return True
         else:
-            return f"Error: {user} not in this room!"
+            return False
