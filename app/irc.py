@@ -336,11 +336,17 @@ class IRC_App:
         '''
         # make sure receiver is in the instance
         if receiver not in self.users.keys():
+            if self.debug:
+                print(f'\napp.send_dm() \nERROR: {receiver} not in app instance!')
+                logging.info(f'app.send_dm() \nERROR: {receiver} not in app instance!\n')
             self.users[sender].send(f'Error: {receiver} not in app instance!'.encode('ascii'))
         else:
             # save message to User() instance. 
             # User() will send notification message to receiver.
             # User() will also check whether sender was blocked by receiver.
+            if self.debug:
+                print(f'\napp.send_dm() \nsending {receiver} message: {message}!')
+                logging.info(f'app.send_dm() \nsender: {receiver} \nmessage: {message}!\n')
             self.users[receiver].receive_dm(sender, message)
 
     def read_dms(self, receiver, sender=None):
@@ -498,32 +504,47 @@ class IRC_App:
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
 
-        # # Case where user wants to directly message another user
-        # elif message.split()[0] == "/message":
-        #     '''
-        #     syntax - /message @user_name <message>
-        #     '''
-        #     # case where client doesn't include a user_name
-        #     if len(message.split()) == 1:
-        #         sender_socket.send('Error: /message requires a username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
-        #     # case where user tries to message more than one person at a time.
-        #     elif message.split().count('@') > 1:
-        #         sender_socket.send('Error: /message only takes one username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
-        #     # remove /message and @user_name, then send the remaining message
-        #     else:
-        #         message_text = message.split()
-        #         for word in message_text:
-        #             # remove command
-        #             if word[0] == '/':
-        #                 message_text.remove(word)
-        #             # get receiver's username
-        #             elif word[0] == '@':
-        #                 receiver = [char for char in word]
-        #                 receiver.remove('@')
-        #                 receiver = str(receiver)
-        #                 message_text.remove(receiver)
-        #         # send
-        #         self.send_dm(sender_name, message_text, receiver)
+        # Case where user wants to directly message another user
+        elif message.split()[0] == "/message":
+            '''
+            syntax - /message @user_name <message>
+            '''
+            if self.debug:
+                print('\napp.message_parser() \n/message case')
+                logging.info('app.message_parser() \n/message case\n')
+            # case where client doesn't include a user_name
+            if len(message.split()) == 1:
+                if self.debug:
+                    print('\napp.message_parser() \n/message case')
+                    logging.info('app.message_parser() \nERROR: not enough @user_name args\n')
+                sender_socket.send('Error: /message requires a username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
+            # case where user tries to message more than one person at a time.
+            elif message.split().count('@') > 1:
+                if self.debug:
+                    print('\napp.message_parser() \n/message case')
+                    logging.info('app.message_parser() \nERROR: too many @s!\n')
+                sender_socket.send('Error: /message only takes one username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
+            # remove /message and @user_name, then send the remaining message
+            else:
+                if self.debug:
+                    print(f'\napp.message_parser() \nremoving /message and @user_name from: {message.split()}')
+                    logging.info(f'app.message_parser() \nremoving /message and @user_name from: {message.split()}\n')
+                message_text = message.split()
+                # remove command
+                message_text.pop(0)
+                # get receiver's name & remove @ symbol
+                receiver = message_text[0]
+                rec = [w for w in receiver]
+                rec.remove('@')
+                receiver = ''.join(rec)
+                # remove username from message text
+                message_text.pop(0)
+                message_text = ''.join('')
+                if self.debug:
+                    print(f'\napp.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}')
+                    logging.info(f'app.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}\n')
+                # send
+                self.send_dm(sender_name, message_text, receiver)
 
                 
         # # Case where a user wants to check their direct messages

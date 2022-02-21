@@ -49,6 +49,9 @@ class User:
             # store the message
             self.dms[sender] = message
             # send an alert message
+            if self.debug:
+                print(f'user.receive_dm() \n{sender} sent message {message}')
+                logging.info(f'user.receive_dm() \n{sender} sent message {message}\n')
             self.send(f'New message from {sender}! \nUse /dms {sender} to read'.encode('ascii'))
         else:
             self.send(f'{sender} is blocked!'.encode('ascii'))
