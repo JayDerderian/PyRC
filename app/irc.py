@@ -8,9 +8,7 @@ This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
 '''
 
-from email import message
 import logging
-from ntpath import join
 
 from app.user import User
 from app.chatroom import Chatroom
@@ -288,8 +286,8 @@ class IRC_App:
             else:
                 sender_socket.send(f'Error: Unable to leave {room_to_leave} for some reason?'.encode('ascii'))
 
-    # message another user privatly in a shared room
-    def send_whisper(self, sender, message, receiver):
+    # message another user privately in a shared room
+    def send_whisper(self, sender_name, message, receiver):
         '''
         privately message another user in a shared chatroom.
         ideally the message will only be seen between the two users,
@@ -298,26 +296,49 @@ class IRC_App:
         parameters
         ----------
         - sender = '' (sender of the whisper)
-        - message = ''
+        - message = '' (note: full entereted text! command and username are still
+                        part of this string)
         - receiver = '' (receiver of the whisper)
         '''
-        # ensure receiver is in this instance
+
+        if self.debug:
+            print(f'\napp.message_parser() /whisper \nsearching for {receiver}...')
+            logging.info(f'app.message_parser() /whisper \nsearching for {receiver}...\n')
+        
+        # case where receiver is not in app instance
         if receiver not in self.users.keys():
-            self.users[sender].send(f'Error: {receiver} is not in app instance!'.encode('ascii'))
+            if self.debug:
+                print(f'\napp.message_parser() /whisper \nError: {receiver} not in app instance!')
+                logging.error(f'app.message_parser() /whisper \nERROR: {receiver} not in app instance!\n')                    
+            self.users[sender_name].send(f'Error: {receiver} not in application instance!'.encod('ascii'))
 
-        # ensure receiver hasn't blocked sender
-        if self.users[receiver].has_blocked(sender):
-            self.users[sender].send(f'Error: {receiver} has blocked you!'.encode('ascii'))
+        # case where receiver blocked sender
+        elif self.users[receiver].has_blocked(sender_name):
+            if self.debug:
+                print(f'\napp.message_parser() /whisper \nError: {receiver} blocked {sender_name}!')
+                logging.info(f'app.message_parser() /whisper \nERROR: {receiver} blocked {sender_name}!')
+            self.users[sender_name].send(f'Error: you were blocked by {receiver}!'.encode('ascii'))
 
-        # send whisper via User() objects
+        # otherwise, try to send whisper
         else:
-            # ensure both sender and receiver are in the same room
-            if self.users[sender].curr_room != self.users[receiver].curr_room:
-                self.users[sender].send(f'Error: {receiver} is not in the same room!'.encode('ascii'))
-            # send message
+            # make sure sender and receiver are in the same room
+            if self.users[sender_name].curr_room == self.users[receiver].curr_room:
+                # remove command and username arguments
+                message_text = message.split()
+                message_text = message_text[2:]
+                message_text = f'/whisper @{sender_name}: {" ".join(message_text)}'
+                if self.debug:
+                    print(f'\napp.message_parser() /whisper \{sender_name} sending message to {receiver} \nmessage: {message_text}')
+                    logging.info(f'app.message_parser() /whisper \{sender_name} sending message to {receiver} \nmessage: {message_text}\n')
+                # send message to receiver
+                self.users[receiver].send(message_text.encode('ascii'))
+
             else:
-                message = f'<whisper> {sender} : {message}'.encode('ascii')
-                self.users[receiver].send(message)
+                if self.debug:
+                    print(f'\napp.message_parser() /whisper \n{sender_name} not in same room as {receiver}!')
+                    logging.info(f'app.message_parser() /whisper \n{sender_name} not in same room as {receiver}!\n')
+                # send error message to sender
+                self.users[sender_name].send(f'Error: you are not in the same room as {receiver}!'.encode('ascii'))
 
     # directly message another user
     def send_dm(self, sender, message, receiver):
@@ -326,9 +347,9 @@ class IRC_App:
 
         parameters
         ------------
-        - sender = '' (name of sender)
+        - sender = '' 
         - message = ''
-        - reciever = '' (name of sender)
+        - reciever = '' 
 
         wont send message if sender has been blocked by receiver!
         receiver gets a notification message that they've received
@@ -380,6 +401,19 @@ class IRC_App:
         this is a wrapper for User().unblock(user_name)
         '''
         self.users[user_name].unblock(to_unblock)
+    
+    # parse a username
+    def parse_user_name(self, user_name):
+        '''
+        removes the @ symbol when a username is used as an argument, i.e. '@user_name'
+
+        parameters
+        -----------
+        - user_name = ''
+        '''
+        name = [w for w in user_name]
+        name.remove('@')
+        return ''.join(name)
 
     # main message parser.
     def message_parser(self, message, sender_name, sender_socket):
@@ -463,8 +497,15 @@ class IRC_App:
             if len(message.strip().split()) < 2:
                 if self.debug:
                     print(f'\napp.message_parser() /join \nSending /join error message to socket: \n {sender_socket}')
-                    logging.info(f'app.message_parser() /join \nSending /join error message to socket: \n {sender_socket}\n')
+                    logging.error(f'app.message_parser() /join \nSending /join error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
+            
+            # case where room doesn't have '#' symbol in front of it
+            elif '#' not in message.split()[1]:
+                if self.debug:
+                    print(f'\napp.message_parser() /join \nSending /join error message to socket: \n {sender_socket}')
+                    logging.error(f'app.message_parser() /join \nERROR: no "#" in room name argument!\n')
+                sender_socket.send("/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n".encode('ascii'))
 
             # Case where the user is already in the room
             elif message.split()[1] == self.users[sender_name].curr_room:
@@ -515,11 +556,12 @@ class IRC_App:
             # case where client doesn't include a user_name
             if len(message.split()) == 1:
                 if self.debug:
-                    print('\napp.message_parser() \n/message case')
-                    logging.info('app.message_parser() \nERROR: not enough @user_name args\n')
+                    print('\napp.message_parser() /message \n/message case')
+                    logging.info('app.message_parser() /message \nERROR: not enough @user_name args\n')
                 sender_socket.send('Error: /message requires a username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
             # case where user tries to message more than one person at a time.
-            elif message.split().count('@') > 1:
+            # elif message.split().count('@') > 1:
+            elif list(message).count('@') > 1:
                 if self.debug:
                     print('\napp.message_parser() \n/message case')
                     logging.info('app.message_parser() \nERROR: too many @s!\n')
@@ -534,18 +576,18 @@ class IRC_App:
                 message_.pop(0)
                 # get receiver's name & remove @ symbol
                 receiver = message_[0]
-                rec = [w for w in receiver]
-                rec.remove('@')
-                receiver = ''.join(rec)
+                # rec = [w for w in receiver]
+                # rec.remove('@')
+                # receiver = ''.join(rec)
+                receiver = self.parse_user_name(receiver)
                 # remove username from message text
                 message_.pop(0)
                 message_text = ' '.join(message_)
                 if self.debug:
-                    print(f'\napp.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}')
-                    logging.info(f'app.message_parser() \nreceiver {receiver} \nfinal message text: {message_text}\n')
+                    print(f'\napp.message_parser() /message \nreceiver {receiver} \nfinal message text: {message_text}')
+                    logging.info(f'app.message_parser() /message \nreceiver {receiver} \nfinal message text: {message_text}\n')
                 # send
                 self.send_dm(sender_name, message_text, receiver)
-
                 
         # Case where a user wants to check their direct messages
         elif message.split()[0] == "/dms":
@@ -555,18 +597,19 @@ class IRC_App:
             # check if there's a specific user they're looking for
             if len(message.split()) > 1:
                 if self.debug:
-                    print('\napp.message_parser() \n/dms case')
-                    logging.info('app.message_parser() \n/dms case\n')
+                    print('\napp.message_parser() /dms \n/dms case')
+                    logging.info('app.message_parser() /dms \n/dms case\n')
                 dm_sender = message.split()[1]
                 if dm_sender[0] == '@':
                     # remove @ symbol
-                    dm_sender = [char for char in dm_sender]
-                    dm_sender.remove('@')
-                    dm_sender = ''.join(dm_sender)
+                    # dm_sender = [char for char in dm_sender]
+                    # dm_sender.remove('@')
+                    # dm_sender = ''.join(dm_sender)
+                    dm_sender = self.parse_user_name(dm_sender)
                     # get dm's
                     if self.debug:
-                        print(f'\napp.message_parser() \nsender: {dm_sender} sent to self.read_dms()')
-                        logging.info(f'app.message_parser() \nsender: {dm_sender} sent to self.read_dms()\n')
+                        print(f'\napp.message_parser() /dms \nsender: {dm_sender} sent to self.read_dms()')
+                        logging.info(f'app.message_parser() /dms \nsender: {dm_sender} sent to self.read_dms()\n')
                     self.read_dms(sender_name, dm_sender)
                 else:
                     sender_socket.send(f'Error: /message requires a "@" character to denote a user, ie @user_name'.encode('ascii'))
@@ -576,7 +619,35 @@ class IRC_App:
                 self.read_dms(sender_name)
 
         # # Case where a user wants to whisper to another user in the same chatroom
-        # elif message.split()[0] == '/whisper':
+        elif message.split()[0] == '/whisper':
+
+        # check if user is in same room with username arg aver /whisper. if so, check if sender
+        # is blocked by receiver of /whisper. if not, then send message with the syntax:
+        # <whisper> <sender> : <message>
+
+            # case where there's no username or text argument
+            if len(message.split()) == 1:
+                if self.debug:
+                    print('\napp.message_parser() /whisper \nError: No username argument found!')
+                    logging.error('app.message_parser() /whisper \nERROR: No username argument found!')
+                sender_socket.send('Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
+            
+            # case where we try to message more than one user
+            if list(message).count('@') > 1: 
+                if self.debug:
+                    print('\napp.message_parser() /whisper \nError: too many username arguments found!')
+                    logging.error('app.message_parser() /whisper \nERROR: too many username arguments found!\n')
+                sender_socket.send('Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
+
+            # otherwise, get receiver name and send to method
+            else:
+                message_ = message.split()
+                # remove command
+                message_.pop(0)
+                # get receiver's name & remove @ symbol
+                receiver = message_[0]
+                receiver = self.parse_user_name(receiver)
+                self.send_whisper(sender_name, message, receiver)
 
 
         # # Case where user wants to block DM's from another user
@@ -609,6 +680,6 @@ class IRC_App:
         #     for name in to_unblock:
         #         self.unblock(sender_name, name)
 
-        # TEMP response
+        # anything else...
         else:
             sender_socket.send(f'{message.split()[0]} is not a valid command!'.encode('ascii'))

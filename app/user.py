@@ -39,6 +39,12 @@ class User:
         if self.debug:
             print(f'\nuser.send() user: {self.name} \nsending encoded ascii message: {message} \nvia socket: \n{self.socket}')
             logging.info(f'user.send() user: {self.name} \nsending encoded ascii message: {message} \nvia socket: \n{self.socket}\n')
+        if type(message) != bytes:
+            if self.debug:
+                print(f'\nuser.send() user: {self.name} \nERROR: message must be a series of bytes using ascii encoding. \nReceived: {message}')
+                logging.error(f'user.send() \nuser: {self.name} \nERROR: message not in correct format! \
+                                Must be a series of bytes using ascii encoding. \nReceived: {message} \nType: {type(message)}\n')
+            self.socket.send(f'Error: message not in correct format! Must be a series of bytes using ascii encoding.'.encode('ascii'))
         self.socket.send(message)
 
     def get_dm(self, sender, message):
@@ -49,8 +55,12 @@ class User:
         '''
         # is this sender blocked?
         if sender not in self.blocked:
-            # store the message
-            self.dms[sender] = message
+            # store the message if we haven't gotten one from this user
+            if sender not in self.dms.keys():
+                self.dms[sender] = message
+            # otherwise add to their list of messages
+            else:
+                self.dms[sender].extend(message)
             if self.debug:
                 print(f'user.get_dm() \n{sender} sent message {message}')
                 logging.info(f'user.get_dm() \n{sender} sent message {message}\n')
@@ -59,19 +69,19 @@ class User:
         else:
             ...
 
-    def read_dm(self, sender):
+    def read_dm(self, user):
         '''
         displays a message from a single user
         '''
         if len(self.dms) > 0:
-            if sender in self.dms.keys():
+            if user in self.dms.keys():
                 if self.debug:
-                    logging.info(f'user.read_dm() \nsender: {sender} \nmessage: {self.dms[sender]}\n')
-                self.send(f'{sender}: \n{self.dms[sender]}'.encode('ascii'))
+                    logging.info(f'user.read_dm() \nsender: {user} \nmessage: {self.dms[user]}\n')
+                self.send(f'{user}: \n{self.dms[user]}'.encode('ascii'))
             else:
                 if self.debug:
-                    logging.error(f'user.read_dm() \nERROR: no messages from user: {sender}!\n')
-                self.send(f'No messages from {sender}!\n'.encode('ascii'))
+                    logging.error(f'user.read_dm() \nERROR: no messages from user: {user}!\n')
+                self.send(f'No messages from {user}!\n'.encode('ascii'))
         else:
             if self.debug:
                 logging.info('user.read_dm() \nNo messages!\n')
@@ -84,8 +94,8 @@ class User:
         dms = []
         if len(self.dms) > 0:
             for sender in self.dms:
-                dms.append(f'{sender} : \n{self.dms[sender]}')
-            dms_str = ''.join(dms)
+                dms.append(f'{sender} : \n{self.dms[sender]}\n')
+            dms_str = ' '.join(dms)
             if self.debug:
                 print(f'\nuser.read_all_dms() \nuser: {self.name} \nmessages: {dms_str}')
                 logging.info(f'user.read_all_dms() \nuser: {self.name} \nmessages: {dms_str}\n')
