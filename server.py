@@ -84,7 +84,7 @@ def run_server():
 
             # add user to instance (and default room) and update user dict
             APP.add_user(new_user, client)
-
+            
             # create a new thread for this client to handle message I/O
             thread = Thread(target=handle, args=(client,))
             thread.start()

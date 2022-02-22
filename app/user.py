@@ -37,11 +37,9 @@ class User:
         ***message must be a string already encoded to ascii!***
         '''
         if self.debug:
-            print(f'\nuser.send() user: {self.name} \nsending encoded ascii message: {message} \nvia socket: \n{self.socket}')
             logging.info(f'user.send() user: {self.name} \nsending encoded ascii message: {message} \nvia socket: \n{self.socket}\n')
         if type(message) != bytes:
             if self.debug:
-                print(f'\nuser.send() user: {self.name} \nERROR: message must be a series of bytes using ascii encoding. \nReceived: {message}')
                 logging.error(f'user.send() \nuser: {self.name} \nERROR: message not in correct format! \
                                 Must be a series of bytes using ascii encoding. \nReceived: {message} \nType: {type(message)}\n')
             self.socket.send(f'Error: message not in correct format! Must be a series of bytes using ascii encoding.'.encode('ascii'))
@@ -62,7 +60,6 @@ class User:
             else:
                 self.dms[sender].extend(message)
             if self.debug:
-                print(f'user.get_dm() \n{sender} sent message {message}')
                 logging.info(f'user.get_dm() \n{sender} sent message {message}\n')
             # send an alert message to receiver
             self.send(f'New message from {sender}! \nUse /dms @{sender} to read'.encode('ascii'))
@@ -97,7 +94,6 @@ class User:
                 dms.append(f'{sender} : \n{self.dms[sender]}\n')
             dms_str = ' '.join(dms)
             if self.debug:
-                print(f'\nuser.read_all_dms() \nuser: {self.name} \nmessages: {dms_str}')
                 logging.info(f'user.read_all_dms() \nuser: {self.name} \nmessages: {dms_str}\n')
             self.send(dms_str.encode('ascii'))
         else:
