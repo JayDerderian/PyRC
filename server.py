@@ -9,7 +9,6 @@ import socket
 from threading import Thread
 
 from app.irc import IRC_App
-from app.chatroom import Chatroom
 
 # Constants
 HOST = socket.gethostname()
@@ -19,9 +18,10 @@ BUFFER_MAX = 2048
 CLIENT_MAX = 10
 DEFAULT_ROOM_NAME = '#lobby'
 
-# Application instance. #lobby room is present by default.
+# Application instance.
 APP = IRC_App(debug=True)  
 
+# Server info
 SERVER_INFO = {
     "Sockets": [],  # list of client_socket objects
     "Users": [],    # list of tuples (client_socket object, client_username)
@@ -53,8 +53,13 @@ if DEBUG:
     logging.info(f'server.py \nSERVER STARTED \nHost: {HOST}, Port: {PORT}\n')
 
 
-#------------------------------------------------------------------------------------------#
+#-----------------------------------SERVER LOOP-----------------------------------------#
 
+
+# *******************************************************************************
+# TODO: add command parser? 
+#       maybe introduce a way to manually shut down server while it's running?
+# ******************************************************************************
 
 def run_server():
     '''
@@ -89,29 +94,21 @@ def run_server():
             thread = Thread(target=handle, args=(client,))
             thread.start()
 
-        # message from existing user
+        # message from existing user (handled in separate thread!)
         else:
-            '''
-            NOTE: I think having the app instance only be called in handle() will be better.
-                  This loop operates on its own thread, and each new user gets a new thread 
-                  created for them when they join. 
-
-                  This is the current approach to asynchronous I/O, though it'll be worth it 
-                  to look into this further!
-            '''
-            # message = client.recv(BUFFER_MAX).decode('ascii')
-            # if DEBUG:
-            #     logging.info(f'server.run_server() \nMessage received! \nSOCKET: {str(SERVER_INFO["Sockets"][client])} \nAddress: {address} \nMESSAGE: {message}')
-            
-            # # print(message)
-            # # send to message parser
-            # APP.message_parser(message, find_user(client), client)
             ...
 
 
+'''
+NOTE: This loop operates on its own thread, and each new user gets a new thread 
+      created for them when they join. 
+
+      This is the current approach to asynchronous I/O, though it'll be worth it 
+      to look into this further!
+'''
 def handle(client):
     '''
-    handles individual user I/O. operates on within its own thread.
+    handles individual user I/O.
     '''
     while True:
         # case where the server recieves a message 
@@ -163,8 +160,7 @@ def find_user(client):
     return SERVER_INFO["Users"][index[0]]
 
 
-#------------------------------------------------------------------------------------#
+#----------------------------------DRIVER CODE--------------------------------------#
 
-# driver code
 if __name__ == '__main__':
     run_server()

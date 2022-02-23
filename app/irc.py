@@ -15,6 +15,7 @@ from app.chatroom import Chatroom
 
 DEFAULT_ROOM_NAME = '#lobby'
 
+
 # Broadcast a message to all clients in a given room
 def message_broadcast(room, sender_name, message, debug=False):
     '''
@@ -177,7 +178,6 @@ class IRC_App:
             self.create_room(room_to_join, sender_name)
             sender_socket.send(f'Joined {room_to_join}!'.encode('ascii'))
 
-
         # Case where it DOES already exist
         else:
             if self.debug:
@@ -214,8 +214,6 @@ class IRC_App:
             if self.debug:
                 logging.info(f'\napp.join_room() \n{sender_name} joined {room_to_join}!')
             message_broadcast(self.rooms[room_to_join], sender_name, join_message, self.debug)
-
-
 
     # Create a new Chatroom, add the room to the room list, and add the client to the chatroom
     # A room cannot exist without a client, so one must be supplied
@@ -447,15 +445,35 @@ class IRC_App:
         - (No command) <message>
             - Send message to current room. #lobby is the default room.
 
-        - /join #room_name
+        - /rooms
+            - list all currently active rooms in app instance
+
+        - /join #room_name (opt) #room_name2 #room_name3 ...
             - join a chatroom. a new one will be created if it doesn't already exist.
+            - to join multiple rooms, add additional room names separated by a space
 
         - /leave #room_name
-            - leave current room. if you are in the main lobby, you will be asked if you 
+            - leave current room. user will be sent back to #lobby by default 
+            - if you are in the main lobby, you will be asked if you 
               want to exit. if yes, then client will terminate.
+            - if user().curr_rooms[] > 1, you will be asked which room
+            - you'd like to go back to, otherwise you'll go back to the #lobby.
+        
+        - /users
+            - list all other users in the room the client is currently in
+
+        - /broadcast #room_name1 <message_1> #room_name2 <message_2>...
+            - broadcast *distinct* messages to *multiple* rooms
+
+            - after command, user will be shown a list of active rooms
+              and they can select which rooms they want to broad cast too, 
+              and in what order.
+
+            - message input will be prompted with each room they listed
 
         - /message @<user_name> <message>
-            - send a direct message to another user, regardless if they're in the same room with you.
+            - send a direct message to another user, regardless if they're in the 
+              same room with you.
             - these are asynchronous between users.
         
         - /dms (opt) <from_user>
@@ -495,31 +513,59 @@ class IRC_App:
                 logging.info(f'app.message_parser() \nSender: {sender_name} \nRoom: {room} \nMessage: {message}\n')
             message_broadcast(self.rooms[room], sender_name, message, self.debug)
 
-        # Case where user wants to join a room:
+        #### Case where user wants to join a room ###:
         elif message.split()[0] == "/join":
-            # Case where there's a typo or user forgot to add a room argument
+            '''
+            syntax : /join #room_name1 (opt) #room_name2 etc...
+            '''
+            # case where there's a typo or user forgot to add a room argument
             if len(message.strip().split()) < 2:
                 if self.debug:
                     logging.error(f'app.message_parser() /join \nSending /join error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/join requires a #room_name argument.\nPlease enter: /join #roomname\n".encode('ascii'))
             
-            # case where room doesn't have '#' symbol in front of it
+            # case where first room arg doesn't have '#' symbol in front of it
             elif '#' not in message.split()[1]:
                 if self.debug:
                     logging.error(f'app.message_parser() /join \nERROR: no "#" in room name argument!\n')
                 sender_socket.send("/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n".encode('ascii'))
 
-            # Case where the user is already in the room
+            # case where the user is already in the room
+            # ****NOTE: move this down to the loop in the else-block below?****
             elif message.split()[1] == self.users[sender_name].curr_room:
                 sender_socket.send(f'Error: you are already in {message.split()[1]}!')
             
-            # Otherwise join or create the room.
+            # otherwise try to join or create room(s).
             else:
+                
+                # ******************************************
+                # TODO: 
+                #   Add ability to join multiple rooms!
+                # ******************************************
+                '''
+                # check if there's more than one room argument
+                if len(message.split()) > 2:
+                    rooms_to_join = []
+                    for word in message.split():
+                        if word[0] == '#':
+                            rooms_to_join.append(word)
+
+                    # attempt to add user to these rooms
+                    for room in rooms_to_join:
+                        # make sure user isn't already in this room
+                        if room not in self.users[sender_name].curr_rooms:
+                            self.join_room(room, sender_name, sender_socket)
+                            self.users[sender_name].curr_rooms.append(room)
+                        else:
+                            sender_socket.send(f'You are already in {room_to_join[room]}!'.encode('ascii))
+                else:
+                '''
                 if self.debug:
                     logging.info(f'app.message_parser() /join \nattempting to join {message.split()[1]}...\n')
+                # add conditon to check whether user is in this room here too...
                 self.join_room(message.split()[1], sender_name, sender_socket)
 
-        # Case where user wants to leave a room:
+        ### Case where user wants to leave a room ###:
         elif message.split()[0] == "/leave":
 
             # Case where user just submits "/leave"
@@ -543,8 +589,49 @@ class IRC_App:
                     sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
+        
+        # ******************************************************
+        # TODO: add these cases as per the grading criteria!
+        # ******************************************************
 
-        # Case where user wants to directly message another user
+        # ### Case where user wants to list all active rooms ###:
+        # elif message.split()[0] == "/rooms":
+        #     if len(self.rooms) > 0:
+        #         rooms = f'Active rooms: \n{str(self.list_all_rooms())}'
+        #         sender_socket.send(rooms.encode('ascii'))
+        #     else:
+        #         sender_socket.send('Error: no active rooms!'.encode('ascii'))
+
+        # ### Case where user wants list of other users in their current room ###
+        # elif message.split()[0] == "/users":
+        #     # get users current room
+        #     cur_room = self.users[sender_name].curr_room
+        #     # make sure cur_room is accurate...
+        #     if cur_room in self.rooms.keys():
+        #         # get user list from room
+        #         user_list = f'{cur_room} users: \n{self.rooms[cur_room].get_users()}'
+        #         sender_socket.send(user_list.encode('ascii'))
+        #     else:
+        #         sender_socket.send(f'Error: unable to get users for room {cur_room}!'.encode('ascii'))
+
+        ### Case where user wants to send *distinct* messages to *multiple* rooms ###
+        # elif message.split()[0] == "/broadcast"
+
+            # command syntax: /broadcast #room_name1 <message1> | #room_name2 <message2> |... etc.
+            
+            # remove /broadcast command 
+
+            # loop:
+            #   get room name, check if there's people in it
+            #       if yes, send message
+            #       else, skip 
+
+            # only broadcast to rooms with people in them!
+
+            # check to make sure '|' preceeds another #room_name to ensure we reached the end of the message
+
+
+        ### Case where user wants to directly message another user ###
         elif message.split()[0] == "/message":
             '''
             syntax - /message @user_name <message>
@@ -583,7 +670,7 @@ class IRC_App:
                 # send
                 self.send_dm(sender_name, message_text, receiver)
                 
-        # Case where a user wants to check their direct messages
+        ### Case where a user wants to check their direct messages ###
         elif message.split()[0] == "/dms":
             '''
             syntax - /dms (opt) @<sender_name> 
@@ -610,12 +697,12 @@ class IRC_App:
                 # otherwise retrieve all dms for this user
                 self.read_dms(sender_name)
 
-        # # Case where a user wants to whisper to another user in the same chatroom
+        ### Case where a user wants to whisper to another user in the same chatroom ###
         elif message.split()[0] == '/whisper':
 
-        # check if user is in same room with username arg aver /whisper. if so, check if sender
-        # is blocked by receiver of /whisper. if not, then send message with the syntax:
-        # <whisper> <sender> : <message>
+            # check if user is in same room with username arg aver /whisper. if so, check if sender
+            # is blocked by receiver of /whisper. if not, then send message with the syntax:
+            # <whisper> <sender> : <message>
 
             # case where there's no username or text argument
             if len(message.split()) == 1:
@@ -640,7 +727,7 @@ class IRC_App:
                 self.send_whisper(sender_name, message, receiver)
 
 
-        # # Case where user wants to block DM's from another user
+        # ### Case where user wants to block DM's from another user ###
         # elif message.split()[0] == "/block":
         #     # case where the users messes up, yet again
         #     if len(message.split()) == 1:
@@ -655,7 +742,7 @@ class IRC_App:
         #     for name in to_block:
         #         self.block(sender_name, name)
 
-        # # Case where user wants to un-block another user.
+        # ### Case where user wants to un-block another user ###
         # elif message.split()[0] == "/unblock":
         #     # case where the users messes up, yet again
         #     if len(message.split()) == 1:

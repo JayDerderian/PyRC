@@ -26,6 +26,8 @@ class User:
         self.name = name             # username
         self.socket = socket         # user's socket() object
         self.curr_room = curr_room   # user's current room (str)
+                                     # NOTE: replace self.curr_room with curr_rooms = []!
+        self.curr_rooms = []         # list (list[str]) of room names user is active in
         
         self.blocked = []            # list of blocked users (list[str])
         self.dms = {}                # dictionary of direct messages. 
@@ -75,14 +77,17 @@ class User:
                 if self.debug:
                     logging.info(f'user.read_dm() \nsender: {user} \nmessage: {self.dms[user]}\n')
                 self.send(f'{user}: \n{self.dms[user]}'.encode('ascii'))
+                return f'{user}: \n{self.dms[user]}'
             else:
                 if self.debug:
                     logging.error(f'user.read_dm() \nERROR: no messages from user: {user}!\n')
                 self.send(f'No messages from {user}!\n'.encode('ascii'))
+                return f'No messages from {user}!'
         else:
             if self.debug:
                 logging.info('user.read_dm() \nNo messages!\n')
             self.send('No messages!'.encode('ascii'))
+            return 'No messages!'
 
     def read_all_dms(self):
         '''
@@ -96,8 +101,10 @@ class User:
             if self.debug:
                 logging.info(f'user.read_all_dms() \nuser: {self.name} \nmessages: {dms_str}\n')
             self.send(dms_str.encode('ascii'))
+            return dms_str
         else:
             self.send('No direct messages!'.encode('ascii'))
+            return 'No direct messages!'
     
     def has_blocked(self, sender):
         '''
