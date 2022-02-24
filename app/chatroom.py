@@ -37,6 +37,9 @@ class Chatroom:
         '''
         add a new client. key is their username, value is the User() object
 
+        updates User() object fields curr_room and curr_rooms if this room 
+        hasn't been visited by the user yet.
+
         parameters
         ------------
         - new_user = User() object
@@ -46,11 +49,15 @@ class Chatroom:
         # add the client
         self.clients[new_user.name] = new_user
         new_user.curr_room = self.name
+        if self.name not in new_user.curr_rooms:
+            new_user.curr_rooms.append(self.name)
         
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_room(self, user):
         '''
-        remove a client from a chatroom. does not update curr_name field!
+        remove a client from a chatroom. 
+        
+        does not update curr_name or curr_names fields!
 
         parameters
         -----------
@@ -62,6 +69,6 @@ class Chatroom:
             # delete the client
             del self.clients[user]
         else:
-            print(f'ERROR: {user} was not in {self.name}!')
+            print(f'ERROR: {user} is not in {self.name}!')
             if self.debug:
                 logging.error(f'chatroom.remove_client_from_room() \nERROR: {user} was not in room {self.name}!')

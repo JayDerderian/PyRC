@@ -12,7 +12,7 @@ import logging
 import socket
 from threading import Thread
 
-from ui.cli import CLI
+from ui.tui import TUI
 from info import APP_INFO, CLIENT_COMMANDS
 
 
@@ -22,7 +22,7 @@ PORT = 5050
 ADDR = (HOST, PORT)
 BUFFER_MAX = 2048
 
-TEXT_UI = CLI()
+TEXT_UI = TUI()
 
 CLIENT_INFO = {
     "Name": '',          # client user name

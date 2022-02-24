@@ -60,7 +60,7 @@ from termcolor import (
     colored, COLORS
 )
 
-class CLI:
+class TUI:
     '''
     import and instantiate this class to use foreground and background
     colors in the terminal. 

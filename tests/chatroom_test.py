@@ -19,6 +19,9 @@ def test_add_new_client():
     test_room = Chatroom(room_name='test_room')
     test_user_object = mock.Mock()
     test_user_object.name = 'test_user'
+    test_user_object.curr_rooms = []
+    test_user_object.name = ''
+
     test_room.add_new_client_to_room(test_user_object)
     assert len(test_room.clients) > 0
     assert test_user_object.name in test_room.clients.keys()
@@ -31,6 +34,9 @@ def test_remove_client():
     test_room = Chatroom(room_name='test_room')
     test_user_object = mock.Mock()
     test_user_object.name = 'test_user'
+    test_user_object.curr_rooms = []
+    test_user_object.name = ''
+    
     test_room.add_new_client_to_room(test_user_object)
     assert len(test_room.clients) > 0
     assert test_user_object.name in test_room.clients.keys()

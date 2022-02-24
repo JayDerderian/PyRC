@@ -23,15 +23,15 @@ class User:
                                 format='%(asctime)s %(message)s',
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
 
-        self.name = name             # username
-        self.socket = socket         # user's socket() object
-        self.curr_room = curr_room   # user's current room (str)
-                                     # NOTE: replace self.curr_room with curr_rooms = []!
-        self.curr_rooms = []         # list (list[str]) of room names user is active in
+        self.name = name                # username
+        self.socket = socket            # user's socket() object
+        self.curr_room = curr_room      # user's current room (str)
+                                        # NOTE: replace self.curr_room with curr_rooms = []!
+        self.curr_rooms = [curr_room]   # list (list[str]) of room names user is active in
         
-        self.blocked = []            # list of blocked users (list[str])
-        self.dms = {}                # dictionary of direct messages. 
-                                     # key is sender (str), value is the message (str)
+        self.blocked = []               # list of blocked users (list[str])
+        self.dms = {}                   # dictionary of direct messages. 
+                                        # key is sender (str), value is the message (str)
 
     def send(self, message):
         '''
