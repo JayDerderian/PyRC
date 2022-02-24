@@ -159,8 +159,8 @@ def test_get_all_users_in_app():
     test_app.join_room('#lobby', test_user1, test_socket1)
     test_app.join_room('#lobby', test_user2, test_socket2)
 
-    user_list = str(test_app.get_all_users())
-    user_keys = str(test_app.users.keys())
+    user_list = test_app.get_all_users()
+    user_keys = list(test_app.users.keys())
 
     assert user_list == user_keys
     print('...ok!')
@@ -181,8 +181,9 @@ def test_get_single_room_users():
     test_app.join_room('#lobby', test_user2, test_socket2)
 
     user_list = test_app.get_users('#lobby', test_socket1)
+    user_keys = list(test_app.rooms['#lobby'].clients.keys())
 
-    assert user_list == str(test_app.rooms['#lobby'].clients.keys())
+    assert user_list.split() == user_keys
     assert user_list != '#lobby does not exist!'
     print('...ok!')
 

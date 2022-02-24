@@ -30,7 +30,7 @@ class Chatroom:
     # returns a list of users in this room:
     def get_users(self):
         user_list = list(self.clients.keys())
-        return " \n".join(user_list) 
+        return " ".join(user_list) 
 
     # Adds a new client to a chatroom and notifies clients in that room
     def add_new_client_to_room(self, new_user):
