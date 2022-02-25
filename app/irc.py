@@ -100,7 +100,6 @@ class IRC_App:
             if self.debug:
                 logging.info(f'app.add_user() {user_name} is already in the server!\n')
             new_user_socket.send(f'{user_name} is already in this instance!'.encode('ascii'))
-            return f'{user_name} is already in this instance!'
 
     # remove a user from the instance
     def remove_user(self, user_name):
@@ -649,12 +648,14 @@ class IRC_App:
                 if self.debug:
                     logging.info('app.message_parser() /message \nERROR: not enough @user_name args\n')
                 sender_socket.send('Error: /message requires a username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
+                return 'Error: /message requires a username argument. \nex: /message @<user_name> <message>'
             # case where user tries to message more than one person at a time.
             # elif message.split().count('@') > 1:
             elif list(message).count('@') > 1:
                 if self.debug:
                     logging.info('app.message_parser() \nERROR: too many @s!\n')
                 sender_socket.send('Error: /message only takes one username argument. \nex: /message @<user_name> <message>'.encode('ascii'))
+                return 'Error: /message only takes one username argument. \nex: /message @<user_name> <message>'
             # remove /message and @user_name, then send the remaining message
             else:
                 if self.debug:
@@ -690,7 +691,8 @@ class IRC_App:
                         logging.info(f'app.message_parser() /dms \nsender: {dm_sender} sent to self.read_dms()\n')
                     self.read_dms(sender_name, dm_sender)
                 else:
-                    sender_socket.send(f'Error: /message requires a "@" character to denote a user, ie @user_name'.encode('ascii'))
+                    sender_socket.send('Error: /message requires a "@" character to denote a user, ie @user_name'.encode('ascii'))
+                    return 'Error: /message requires a "@" character to denote a user, ie @user_name'
             # otherwise just get all their dms
             else:
                 # otherwise retrieve all dms for this user
@@ -708,12 +710,14 @@ class IRC_App:
                 if self.debug:
                     logging.error('app.message_parser() /whisper \nERROR: No username argument found!')
                 sender_socket.send('Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
-            
+                return 'Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'
+
             # case where we try to message more than one user
             if list(message).count('@') > 1: 
                 if self.debug:
                     logging.error('app.message_parser() /whisper \nERROR: too many username arguments found!\n')
                 sender_socket.send('Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
+                return 'Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'
 
             # otherwise, get receiver name and send to method
             else:

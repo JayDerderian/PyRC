@@ -39,9 +39,8 @@ def test_add_user_that_already_exists():
     test_socket = mock.Mock()
 
     test_app.add_user(test_user, test_socket)
-    res = test_app.add_user(test_user, test_socket)
+    test_app.add_user(test_user, test_socket)
 
-    assert res == f'{test_user} is already in this instance!'
     assert len(test_app.users) == 1
     assert test_user in test_app.users.keys()
     print('...ok!')
@@ -188,9 +187,34 @@ def test_get_single_room_users():
     print('...ok!')
 
 
-'''
-TODO: figure out tests for message parser???
-'''
+def test_parser_bad_input():
+    print('testing parser with bad commands...')
+    irc = IRC_App()
+
+    res = irc.message_parser('/whatev')
+    assert res == '/whatev is not a valid command!'
+
+    res = irc.message_parser('/join')
+    assert res == "/join requires a #room_name argument.\nPlease enter: /join #roomname\n"
+
+    res = irc.message_parser('/join room')
+    assert res == "/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n"
+
+    res = irc.message_parser('/message')
+    assert res == 'Error: /message requires a username argument. \nex: /message @<user_name> <message>'
+
+    res = irc.message_parser('/message @user1 @user2')
+    assert res == 'Error: /message only takes one username argument. \nex: /message @<user_name> <message>'
+
+    res = irc.message_parser('/dms')
+    assert res == 'Error: /message requires a "@" character to denote a user, ie @user_name'
+
+    res = irc.message_parser('/whisper')
+    assert res == 'Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'
+
+    res = irc.message_parser('/whisper @user1 @user2')
+    assert res == 'Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'
+
 
 
 def run_IRC_tests():
@@ -208,6 +232,7 @@ def run_IRC_tests():
     test_leave_room()
     test_get_single_room_users()
     test_get_all_users_in_app()
+    test_parser_bad_input()
     
     print('\n...done!')
 
