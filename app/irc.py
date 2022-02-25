@@ -129,16 +129,18 @@ class IRC_App:
     # get a list of all active users
     def get_all_users(self):
         '''
-        returns a list[str] of all active users in the instance.
+        returns a str of all active users in the instance.
         '''
-        return list(self.users.keys())
+        users = list(self.users.keys())
+        return " ".join(users)
 
     # returns a list of active rooms
     def list_all_rooms(self):
         '''
-        returns a list of all active rooms.
+        returns a str of all active rooms.
         '''
-        return list(self.rooms.keys())
+        user_list = list(self.rooms.keys())
+        return " ".join(user_list)
     
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
@@ -597,30 +599,26 @@ class IRC_App:
                     sender_socket.send(f'Leaving {room_to_leave}...'.encode('ascii'))
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name, sender_socket)
-        
-        # ******************************************************
-        # TODO: add these cases as per the grading criteria!
-        # ******************************************************
 
-        # ### Case where user wants to list all active rooms ###:
-        # elif message.split()[0] == "/rooms":
-        #     if len(self.rooms) > 0:
-        #         rooms = f'Active rooms: \n{str(self.list_all_rooms())}'
-        #         sender_socket.send(rooms.encode('ascii'))
-        #     else:
-        #         sender_socket.send('Error: no active rooms!'.encode('ascii'))
+        ### Case where user wants to list all active rooms ###:
+        elif message.split()[0] == "/rooms":
+            if len(self.rooms) > 0:
+                rooms = f'Active rooms: \n{self.list_all_rooms()}'
+                sender_socket.send(rooms.encode('ascii'))
+            else:
+                sender_socket.send('Error: no active rooms!'.encode('ascii'))
 
-        # ### Case where user wants list of other users in their current room ###
-        # elif message.split()[0] == "/users":
-        #     # get users current room
-        #     cur_room = self.users[sender_name].curr_room
-        #     # make sure cur_room is accurate...
-        #     if cur_room in self.rooms.keys():
-        #         # get user list from room
-        #         user_list = f'{cur_room} users: \n{self.rooms[cur_room].get_users()}'
-        #         sender_socket.send(user_list.encode('ascii'))
-        #     else:
-        #         sender_socket.send(f'Error: unable to get users for room {cur_room}!'.encode('ascii'))
+        ### Case where user wants list of other users in their current room ###
+        elif message.split()[0] == "/users":
+            # get users current room
+            cur_room = self.users[sender_name].curr_room
+            # make sure cur_room is accurate...
+            if cur_room in self.rooms.keys():
+                # get user list from room
+                user_list = f'{cur_room} users: \n{self.rooms[cur_room].get_users()}'
+                sender_socket.send(user_list.encode('ascii'))
+            else:
+                sender_socket.send(f'Error: unable to get users for room {cur_room}!'.encode('ascii'))
 
         ### Case where user wants to send *distinct* messages to *multiple* rooms ###
         # elif message.split()[0] == "/broadcast"
@@ -665,11 +663,7 @@ class IRC_App:
                 # remove command
                 message_.pop(0)
                 # get receiver's name & remove @ symbol
-                receiver = message_[0]
-                # rec = [w for w in receiver]
-                # rec.remove('@')
-                # receiver = ''.join(rec)
-                receiver = self.parse_user_name(receiver)
+                receiver = self.parse_user_name(message_[0])
                 # remove username from message text
                 message_.pop(0)
                 message_text = ' '.join(message_)
@@ -690,9 +684,6 @@ class IRC_App:
                 dm_sender = message.split()[1]
                 if dm_sender[0] == '@':
                     # remove @ symbol
-                    # dm_sender = [char for char in dm_sender]
-                    # dm_sender.remove('@')
-                    # dm_sender = ''.join(dm_sender)
                     dm_sender = self.parse_user_name(dm_sender)
                     # get dm's
                     if self.debug:
