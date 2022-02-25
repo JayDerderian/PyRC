@@ -215,6 +215,7 @@ def test_parser_bad_input():
     res = irc.message_parser('/whisper @user1 @user2')
     assert res == 'Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'
 
+    print('...ok!')
 
 
 def run_IRC_tests():
