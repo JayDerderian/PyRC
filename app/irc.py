@@ -553,6 +553,12 @@ class IRC_App:
                 # ******************************************
                 '''
                 # check if there's more than one room argument
+
+                # NOTE: this might take any words in the message that accidentally
+                # start with # and treat it as a room name, potentially breaking
+                # the while message apart. need a way to separate end of message
+                # with a deliminator of sorts.
+                
                 if len(message.split()) > 2:
                     rooms_to_join = []
                     for word in message.split():
@@ -762,3 +768,4 @@ class IRC_App:
         # anything else...
         else:
             sender_socket.send(f'{message.split()[0]} is not a valid command!'.encode('ascii'))
+            return f'{message.split()[0]} is not a valid command!'

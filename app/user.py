@@ -26,7 +26,11 @@ class User:
         self.name = name                # username
         self.socket = socket            # user's socket() object
         self.curr_room = curr_room      # user's current room (str)
-                                        # NOTE: replace self.curr_room with curr_rooms = []!
+        '''
+        NOTE: replace self.curr_room with curr_rooms = []
+              to check whether a user is in a room, see whether chatroom.name is in
+              in user.curr_rooms 
+        '''
         self.curr_rooms = [curr_room]   # list (list[str]) of room names user is active in
         
         self.blocked = []               # list of blocked users (list[str])

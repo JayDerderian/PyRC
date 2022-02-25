@@ -161,7 +161,7 @@ def test_get_all_users_in_app():
     user_list = test_app.get_all_users()
     user_keys = list(test_app.users.keys())
 
-    assert user_list == user_keys
+    assert user_list.split() == user_keys
     print('...ok!')
 
 
@@ -190,29 +190,31 @@ def test_get_single_room_users():
 def test_parser_bad_input():
     print('testing parser with bad commands...')
     irc = IRC_App()
+    test_user = 'test_user1'
+    test_socket = mock.Mock()
 
-    res = irc.message_parser('/whatev')
+    res = irc.message_parser('/whatev', test_user, test_socket)
     assert res == '/whatev is not a valid command!'
 
-    res = irc.message_parser('/join')
+    res = irc.message_parser('/join', test_user, test_socket)
     assert res == "/join requires a #room_name argument.\nPlease enter: /join #roomname\n"
 
-    res = irc.message_parser('/join room')
+    res = irc.message_parser('/join room', test_user, test_socket)
     assert res == "/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n"
 
-    res = irc.message_parser('/message')
+    res = irc.message_parser('/message', test_user, test_socket)
     assert res == 'Error: /message requires a username argument. \nex: /message @<user_name> <message>'
 
-    res = irc.message_parser('/message @user1 @user2')
+    res = irc.message_parser('/message @user1 @user2', test_user, test_socket)
     assert res == 'Error: /message only takes one username argument. \nex: /message @<user_name> <message>'
 
-    res = irc.message_parser('/dms')
+    res = irc.message_parser('/dms user1', test_user, test_socket)
     assert res == 'Error: /message requires a "@" character to denote a user, ie @user_name'
 
-    res = irc.message_parser('/whisper')
+    res = irc.message_parser('/whisper', test_user, test_socket)
     assert res == 'Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'
 
-    res = irc.message_parser('/whisper @user1 @user2')
+    res = irc.message_parser('/whisper @user1 @user2', test_user, test_socket)
     assert res == 'Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'
 
     print('...ok!')
