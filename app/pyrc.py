@@ -36,23 +36,23 @@ def message_broadcast(room, sender_name, message, debug=False):
 
 
 # The container that has rooms, which have lists of clients
-class IRC_App:
+class PyRC:
     '''
-    The main IRC application. One default room - #lobby - is created when
-    this class is instantiated. IRC_App() also keeps tracks of current users 
+    The main IRC chat application. One default room - #lobby - is created when
+    this class is instantiated. PyRC() also keeps tracks of current users 
     and their socket info.
 
-    IRC_App().message_parser(message:str) is the main point of entry for this
-    application. All message strings recieved from the client should be sent 
-    through here.
+    PyRC.message_parser(message:str, user_name, user_socket) is the main point 
+    of entry for this application. All message strings recieved from the client 
+    should be sent through here.
 
-    Initialize IRC_App(debug=True) to create a logger and terminal read outs
+    Initialize PyRC(debug=True) to create a logger and terminal read outs
     '''
     def __init__(self, debug=False):
         # Debuggin' stuff
         self.debug = debug
         if self.debug:
-            logging.basicConfig(filename='IRC_App.log', 
+            logging.basicConfig(filename='PyRC_App.log', 
                     filemode='w', 
                     level=logging.DEBUG, 
                     format='%(asctime)s %(message)s', 

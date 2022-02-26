@@ -1,14 +1,14 @@
 '''
-IRC app testing
+PyRC app testing
 '''
 
 from unittest import mock
-from app.irc import IRC_App
+from app.pyrc import PyRC
 
 
 def test_instantiation():
     print('testing app instantiation...')
-    test_app = IRC_App()
+    test_app = PyRC()
 
     assert '#lobby' in test_app.rooms.keys()
     assert len(test_app.rooms) > 0
@@ -18,7 +18,7 @@ def test_instantiation():
 
 def test_add_new_user():
     print('testing adding a new user...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user'
     test_socket = mock.Mock()
 
@@ -34,7 +34,7 @@ def test_add_new_user():
 
 def test_add_user_that_already_exists():
     print('testing adding a pre-existing user...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user'
     test_socket = mock.Mock()
 
@@ -48,7 +48,7 @@ def test_add_user_that_already_exists():
 
 def test_remove_user():
     print('testing removing a user...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user'
     test_socket = mock.Mock()
 
@@ -63,7 +63,7 @@ def test_remove_user():
 
 def test_remove_non_existant_user():
     print('testing removing a non-existant user...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user'
 
     res = test_app.remove_user(test_user)
@@ -74,7 +74,7 @@ def test_remove_non_existant_user():
 
 def test_create_room():
     print('testing chatroom creation...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user'
     test_socket = mock.Mock()
 
@@ -90,7 +90,7 @@ def test_create_room():
 
 def test_join_single_room():
     print('testing joining non-existant chatroom ...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user1'
     test_socket = mock.Mock()
 
@@ -106,7 +106,7 @@ def test_join_single_room():
 
 def test_join_pre_existing_room():
     print("testing joining a pre-existing room...")
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user'
     test_socket = mock.Mock()
     test_user2 = 'test_user2'
@@ -130,7 +130,7 @@ def test_join_multiple_rooms():
 
 def test_leave_room():
     print("testing leaving a room...")
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user = 'test_user'
     test_socket = mock.Mock()
 
@@ -146,7 +146,7 @@ def test_leave_room():
 
 def test_get_all_users_in_app():
     print('testing getting list of all users in app...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user1 = 'test_user1'
     test_socket1 = mock.Mock()
     test_user2 = 'test_user2'
@@ -167,7 +167,7 @@ def test_get_all_users_in_app():
 
 def test_get_single_room_users():
     print('testing getting user list from single room...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user1 = 'test_user1'
     test_socket1 = mock.Mock()
     test_user2 = 'test_user2'
@@ -188,7 +188,7 @@ def test_get_single_room_users():
 
 def test_block_user():
     print('testing blocking a user...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user1 = 'test_user1'
     test_socket1 = mock.Mock()
     test_user2 = 'test_user2'
@@ -206,7 +206,7 @@ def test_block_user():
 
 def test_unblock_user():
     print('testing unblocking a user...')
-    test_app = IRC_App()
+    test_app = PyRC()
     test_user1 = 'test_user1'
     test_socket1 = mock.Mock()
     test_user2 = 'test_user2'
@@ -224,7 +224,7 @@ def test_unblock_user():
 
 def test_parser_bad_input():
     print('testing parser with bad commands...')
-    irc = IRC_App()
+    irc = PyRC()
     test_user = 'test_user1'
     test_socket = mock.Mock()
 

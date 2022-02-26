@@ -8,7 +8,7 @@ import logging
 import socket
 from threading import Thread
 
-from app.irc import IRC_App
+from app.pyrc import PyRC
 
 # Constants
 HOST = socket.gethostname()
@@ -19,7 +19,7 @@ CLIENT_MAX = 10
 DEFAULT_ROOM_NAME = '#lobby'
 
 # Application instance.
-APP = IRC_App(debug=True)  
+APP = PyRC(debug=True)  
 
 # Server info
 SERVER_INFO = {
