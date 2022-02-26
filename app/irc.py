@@ -168,8 +168,10 @@ class IRC_App:
             '''
             # Only remove users if they only want to be in one room at a time!
             if mult_room == False:
-                # remove user from their current room
                 room = self.users[sender_name].curr_room
+                '''NOTE: iterate through user.curr_rooms to match against
+                         room we want to leave? 
+                '''
                 self.users[sender_name].curr_rooms.remove(room)
                 if self.debug:
                     logging.info(f'app.join_room() \nattempting to remove {sender_name} from {room}...\n')
@@ -735,35 +737,46 @@ class IRC_App:
                 receiver = self.parse_user_name(receiver)
                 self.send_whisper(sender_name, message, receiver)
 
-        # ### Case where user wants to block DM's from another user ###
-        # elif message.split()[0] == "/block":
-        #     # case where the users messes up, yet again
-        #     if len(message.split()) == 1:
-        #         sender_socket.send('Error: /block requires at least one user_name argument!'.encode('ascii'))
-        #     message_ = message.split()
-        #     # remove the command, then iterate through list
-        #     message_.pop(0)
-        #     to_block = []
-        #     for name in message:
-        #         to_block.append(name)
-        #     # send to User() to block each name sent in
-        #     for name in to_block:
-        #         self.block(sender_name, name)
+        ### Case where user wants to block DM's from another user ###
+        elif message.split()[0] == "/block":
+            '''
+            syntax: /block @user1 (opt) @user2...
+            '''
+            # case where the users messes up, yet again
+            if len(message.split()) == 1:
+                sender_socket.send('Error: /block requires at least one user_name argument!'.encode('ascii'))
+                return 'Error: /block requires at least one user_name argument!'
+            message_ = message.split()
+            # remove the command, then iterate through list
+            message_.pop(0)
+            to_block = []
+            for name in message_:
+                # make sure we remove the '@' symbol. 
+                if name[0] == '@':
+                    to_block.append(self.parse_user_name(name))
+            # send to User() to block each name sent in
+            for name in to_block:
+                self.block(sender_name, name)
 
-        # ### Case where user wants to un-block another user ###
-        # elif message.split()[0] == "/unblock":
-        #     # case where the users messes up, yet again
-        #     if len(message.split()) == 1:
-        #         sender_socket.send('Error: /unblock requires at least one user_name argument!'.encode('ascii'))
-        #     message_ = message.split()
-        #     # remove the command, then iterate through list
-        #     message_.pop(0)
-        #     to_unblock = []
-        #     for name in message:
-        #         to_unblock.append(name)
-        #     # send to User() to block each name sent in
-        #     for name in to_unblock:
-        #         self.unblock(sender_name, name)
+        ### Case where user wants to un-block another user ###
+        elif message.split()[0] == "/unblock":
+            '''
+            syntax: /unblock @user1 (opt) @user2...
+            '''
+            # case where the users messes up, yet again
+            if len(message.split()) == 1:
+                sender_socket.send('Error: /unblock requires at least one user_name argument!'.encode('ascii'))
+                return 'Error: /unblock requires at least one user_name argument!'
+            message_ = message.split()
+            # remove the command, then iterate through list
+            message_.pop(0)
+            to_unblock = []
+            for name in message_:
+                if name[0] == '@':
+                    to_unblock.append(self.parse_user_name(name))
+            # send to User() to block each name sent in
+            for name in to_unblock:
+                self.unblock(sender_name, name)
 
         # anything else...
         else:
