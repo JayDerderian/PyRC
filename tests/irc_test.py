@@ -246,6 +246,12 @@ def test_parser_bad_input():
     res = irc.message_parser('/dms user1', test_user, test_socket)
     assert res == 'Error: /message requires a "@" character to denote a user, ie @user_name'
 
+    res = irc.message_parser('/block', test_user, test_socket)
+    assert res == 'Error: /block requires at least one user_name argument!'
+
+    res = irc.message_parser('/unblock', test_user, test_socket)
+    assert res == 'Error: /unblock requires at least one user_name argument!'
+
     res = irc.message_parser('/whisper', test_user, test_socket)
     assert res == 'Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'
 
