@@ -186,6 +186,41 @@ def test_get_single_room_users():
     assert user_list != '#lobby does not exist!'
     print('...ok!')
 
+def test_block_user():
+    print('testing blocking a user...')
+    test_app = IRC_App()
+    test_user1 = 'test_user1'
+    test_socket1 = mock.Mock()
+    test_user2 = 'test_user2'
+    test_socket2 = mock.Mock()
+
+    test_app.add_user(test_user1, test_socket1)
+    test_app.add_user(test_user2, test_socket2)
+
+    test_app.block(test_user1, test_user2)
+    test_app.send_dm(test_user2, 'test message', test_user1)
+
+    assert test_user2 in test_app.users[test_user1].blocked
+    assert test_user2 not in test_app.users[test_user1].dms.keys()
+    print('...ok!')
+
+def test_unblock_user():
+    print('testing unblocking a user...')
+    test_app = IRC_App()
+    test_user1 = 'test_user1'
+    test_socket1 = mock.Mock()
+    test_user2 = 'test_user2'
+    test_socket2 = mock.Mock()
+
+    test_app.add_user(test_user1, test_socket1)
+    test_app.add_user(test_user2, test_socket2)
+
+    test_app.block(test_user1, test_user2)
+    assert test_user2 in test_app.users[test_user1].blocked
+
+    test_app.unblock(test_user1, test_user2)
+    assert test_user2 not in test_app.users[test_user1].blocked
+    print('...ok!')
 
 def test_parser_bad_input():
     print('testing parser with bad commands...')
@@ -235,6 +270,8 @@ def run_IRC_tests():
     test_leave_room()
     test_get_single_room_users()
     test_get_all_users_in_app()
+    test_block_user()
+    test_unblock_user()
     test_parser_bad_input()
     
     print('\n...done!')
