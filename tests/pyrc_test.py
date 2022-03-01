@@ -125,8 +125,20 @@ def test_join_pre_existing_room():
 
 
 def test_join_multiple_rooms():
-    ...
+    print("testing joining multiple rooms...")
+    test_app = PyRC()
+    test_user = 'test_user'
+    test_socket = mock.Mock()
+    test_app.add_user(test_user, test_socket)
 
+    rooms_to_join = ['test_room 1', 'test_room 2', 'test_room 3']
+    for room in rooms_to_join:
+        test_app.join_room(room, test_user)
+    
+    # confirm they've been added to these rooms
+    for room in test_app.rooms:
+        assert test_app.rooms[room].has_user(test_user)
+    print('...ok!')
 
 def test_leave_room():
     print("testing leaving a room...")
@@ -310,7 +322,7 @@ def run_PyRC_tests():
     test_create_room()
     test_join_single_room()
     test_join_pre_existing_room()
-    # test_join_multiple_rooms()
+    test_join_multiple_rooms()
     test_leave_room()
     test_leaving_all_rooms()
     test_get_single_room_users()

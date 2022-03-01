@@ -161,8 +161,6 @@ class PyRC:
         --------------
         - room_to_join = '#room_name' OR list['#room_name1', '#room_name2',..]
         - sender_name = ''
-        - sender_socket = sender socket() object
-        - multi_room = boolean (optional, set to False by default)
         '''
         if self.debug:
             logging.info(f'app.join_room() \nattempting to add {sender_name} to {room_to_join}...\n')
@@ -551,20 +549,12 @@ class PyRC:
             
             # otherwise try to join or create room(s).
             else:
-                
-                # ******************************************
-                # TODO: 
-                #   Add ability to join multiple rooms!
-                # ******************************************
-                '''
                 # check if there's more than one room argument
-                
-                elif len(message.split()) > 2:
+                if len(message.split()) > 2:
                     rooms_to_join = []
                     for word in message.split():
                         if word[0] == '#':
                             rooms_to_join.append(word)
-
                     # attempt to add user to these rooms
                     for room in rooms_to_join:
                         # make sure user isn't already in this room
@@ -572,17 +562,12 @@ class PyRC:
                             self.join_room(room, sender_name, sender_socket)
                             self.users[sender_name].curr_rooms.append(room)
                         else:
-                            sender_socket.send(f'You are already in {room_to_join[room]}!'.encode('ascii))
+                            sender_socket.send(f'You are already in {rooms_to_join[room]}!'.encode('ascii'))
                 else:
                     if self.debug:
                         logging.info(f'app.message_parser() /join \nattempting to join {message.split()[1]}...\n')
                     # add conditon to check whether user is in this room here too...
                     self.join_room(message.split()[1], sender_name, sender_socket)
-                '''
-                if self.debug:
-                    logging.info(f'app.message_parser() /join \nattempting to join {message.split()[1]}...\n')
-                # add conditon to check whether user is in this room here too...
-                self.join_room(message.split()[1], sender_name)
 
         ### Case where user wants to create a new room ###
         elif message.split()[0] == '/create':
@@ -676,6 +661,8 @@ class PyRC:
             remove /broadcast command 
             message.pop(0)
 
+            TODO: implement!
+
             NOTE: there's now chatroom.message_all_clients(sender, message)!
                   this will be usefull with iterating through PyRC.rooms
                   will need to chekc whether chatroom.clients is empty or not first
@@ -753,7 +740,7 @@ class PyRC:
                 if self.debug:
                     logging.info(f'app.message_parser() \nremoving /message and @user_name from: {message.split()}\n')
                 '''
-                TODO: look into a way to do the pop/.join stuff
+                NOTE: look into a way to do the pop/.join stuff
                       using list slicing instead. 
                       seems like a lot of unnecessary steps here.
                 '''
@@ -822,7 +809,7 @@ class PyRC:
             # otherwise, get receiver name and send to method
             else:
                 '''
-                TODO: look into a way to do the pop/.join stuff
+                NOTE: look into a way to do the pop/.join stuff
                       using list slicing instead. 
                       seems like a lot of unnecessary steps here.
                 '''
