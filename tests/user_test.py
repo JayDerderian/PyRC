@@ -13,8 +13,7 @@ def test_instance():
                      curr_room = 'test_room')
     assert test_user.name == 'test_user'
     assert test_user.socket == mock_socket
-    assert test_user.curr_room == 'test_room'
-    assert test_user.curr_rooms[0] == test_user.curr_room
+    assert 'test_room' in test_user.curr_rooms
     assert test_user.blocked == []
     assert test_user.dms == {}
     print('...ok!')

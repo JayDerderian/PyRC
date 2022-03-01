@@ -96,7 +96,7 @@ def test_join_single_room():
 
     test_app.add_user(test_user, test_socket)
 
-    test_app.join_room('#test_room', test_user, test_socket)
+    test_app.join_room('#test_room', test_user)
 
     assert '#test_room' in test_app.rooms.keys()
     assert len(test_app.rooms) > 1
@@ -116,7 +116,7 @@ def test_join_pre_existing_room():
     test_app.add_user(test_user2, test_socket2)
     test_app.create_room('#test_room', test_user)
 
-    test_app.join_room('#test_room', test_user2, test_socket2)
+    test_app.join_room('#test_room', test_user2)
 
     assert len(test_app.rooms['#test_room'].clients) == 2
     assert test_user in test_app.rooms['#test_room'].clients.keys()
@@ -133,16 +133,46 @@ def test_leave_room():
     test_app = PyRC()
     test_user = 'test_user'
     test_socket = mock.Mock()
-
     test_app.add_user(test_user, test_socket)
+
     test_app.create_room('#test_room', test_user)
 
-    test_app.leave_room('#test_room', test_user, test_socket)
+    test_app.leave_room('#test_room', test_user)
 
     assert len(test_app.rooms['#test_room'].clients) == 0
     assert test_user in test_app.rooms['#lobby'].clients.keys()
     print('...ok!')
 
+def test_leaving_all_rooms():
+    print("testing leaving all active rooms...")
+    test_app = PyRC()
+    test_user = 'test_user'
+    test_socket = mock.Mock()
+    test_app.add_user(test_user, test_socket)
+
+    test_room_names = ['Room A', 'Room B', 'Room C', 'Room D', 'Room E']
+    # add  to five rooms
+    for add in range(5):
+        test_app.create_room(test_room_names[add], test_user)
+    # make sure they're there
+    for name in range(5):
+        assert test_app.rooms[test_room_names[name]].has_user(test_user)
+    
+    # remove from all 
+    test_app.leave_all(test_user)
+
+    # make sure they've been removed from all
+    for name in range(5):
+        assert len(test_app.rooms[test_room_names[name]].clients) == 0
+    # make sure users' active room list has been updated accordingly
+    for name in range(5):
+        assert test_room_names[name] not in test_app.users[test_user].curr_rooms
+
+    # make sure #lobby is still in curr_room list
+    assert '#lobby' in test_app.users[test_user].curr_rooms
+    # make sure user is still in #lobby client dict
+    assert test_user in test_app.rooms['#lobby'].clients.keys()
+    print("...ok!")
 
 def test_get_all_users_in_app():
     print('testing getting list of all users in app...')
@@ -155,8 +185,8 @@ def test_get_all_users_in_app():
     test_app.add_user(test_user1, test_socket1)
     test_app.add_user(test_user2, test_socket2)
 
-    test_app.join_room('#lobby', test_user1, test_socket1)
-    test_app.join_room('#lobby', test_user2, test_socket2)
+    test_app.join_room('#lobby', test_user1)
+    test_app.join_room('#lobby', test_user2)
 
     user_list = test_app.get_all_users()
     user_keys = list(test_app.users.keys())
@@ -176,8 +206,8 @@ def test_get_single_room_users():
     test_app.add_user(test_user1, test_socket1)
     test_app.add_user(test_user2, test_socket2)
 
-    test_app.join_room('#lobby', test_user1, test_socket1)
-    test_app.join_room('#lobby', test_user2, test_socket2)
+    test_app.join_room('#lobby', test_user1)
+    test_app.join_room('#lobby', test_user2)
 
     user_list = test_app.get_users('#lobby', test_socket1)
     user_keys = list(test_app.rooms['#lobby'].clients.keys())
@@ -237,6 +267,14 @@ def test_parser_bad_input():
     res = irc.message_parser('/join room', test_user, test_socket)
     assert res == "/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n"
 
+    # TODO: add /leave tests!
+
+    res = irc.message_parser('/create', test_user, test_socket)
+    assert res == 'Error: must include a room name argument separated with a space \nex: /create #room_name'
+
+    res = irc.message_parser('/create room', test_user, test_socket)
+    assert res == 'Error: must include a "#" when denoting a room name! \nex: /create #room_name'
+
     res = irc.message_parser('/message', test_user, test_socket)
     assert res == 'Error: /message requires a username argument. \nex: /message @<user_name> <message>'
 
@@ -261,7 +299,7 @@ def test_parser_bad_input():
     print('...ok!')
 
 
-def run_IRC_tests():
+def run_PyRC_tests():
     print('\nStarting IRC application tests...\n')
 
     test_instantiation()
@@ -274,6 +312,7 @@ def run_IRC_tests():
     test_join_pre_existing_room()
     # test_join_multiple_rooms()
     test_leave_room()
+    test_leaving_all_rooms()
     test_get_single_room_users()
     test_get_all_users_in_app()
     test_block_user()
@@ -283,4 +322,4 @@ def run_IRC_tests():
     print('\n...done!')
 
 if __name__ == '__main__':
-    run_IRC_tests()
+    run_PyRC_tests()

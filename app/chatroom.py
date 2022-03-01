@@ -46,29 +46,48 @@ class Chatroom:
         '''
         if self.debug:
             logging.info(f'chatroom.add_new_client_to_room() \nAdding: {new_user.name} \nsocket: {new_user.socket}\n')
-        # add the client
-        self.clients[new_user.name] = new_user
-        new_user.curr_room = self.name
-        if self.name not in new_user.curr_rooms:
-            new_user.curr_rooms.append(self.name)
+        # add the client if they're not already here
+        if new_user.name not in self.clients.keys():
+            self.clients[new_user.name] = new_user
+            if self.name not in new_user.curr_rooms:
+                new_user.curr_rooms.append(self.name)
+        else:
+            new_user.send(f'Error: you are already in {self.name}!'.encode('ascii'))
         
     # Removes an existing client from a chatroom and notifies the clients in that room
     def remove_client_from_room(self, user):
         '''
         remove a client from a chatroom. 
-        
-        does not update curr_name or curr_names fields!
+        does not modify users curr_room list!
 
         parameters
         -----------
-        - client_name = '' (client to remove)
+        - user = '' (client to remove)
         '''
         if self.debug:
             logging.info(f'chatroom.remove_client_from_room() \nRemoving {user} from {self.name}...\n')
         if user in self.clients.keys():
-            # delete the client
-            del self.clients[user]
+            self.clients.pop(user)
         else:
             print(f'ERROR: {user} is not in {self.name}!')
             if self.debug:
                 logging.error(f'chatroom.remove_client_from_room() \nERROR: {user} was not in room {self.name}!')
+
+    # send a message to all users in chatroom
+    def message_all_clients(self, sender, message):
+        '''
+        send a message to all clients in the room. 
+        accounts for whether a client has blocked sender.
+
+        parameters
+        ------------
+        - sender = ''
+        - message = ''
+        '''
+        if len(self.clients) > 0:
+            for user in self.clients:
+                if self.clients[user].has_blocked(sender):
+                    continue
+                self.clients[user].send(message.encode('ascii'))
+        else:
+            ...

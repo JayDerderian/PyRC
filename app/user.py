@@ -23,14 +23,8 @@ class User:
                                 format='%(asctime)s %(message)s',
                                 datefmt='%m/%d/%Y %I:%M:%S %p')
 
-        self.name = name                # username
+        self.name = name                # user name
         self.socket = socket            # user's socket() object
-        self.curr_room = curr_room      # user's current room (str)
-        '''
-        NOTE: replace self.curr_room with curr_rooms = []
-              to check whether a user is in a room, see whether chatroom.name is in
-              in user.curr_rooms 
-        '''
         self.curr_rooms = [curr_room]   # list (list[str]) of room names user is active in
         
         self.blocked = []               # list of blocked users (list[str])
@@ -41,6 +35,8 @@ class User:
         '''
         send a message via this user's socket object.
         ***message must be a string already encoded to ascii!***
+
+        always preceed with if User.has_blocked(sender) == False !!
         '''
         if self.debug:
             logging.info(f'user.send() user: {self.name} \nsending encoded ascii message: {message} \nvia socket: \n{self.socket}\n')
@@ -53,9 +49,15 @@ class User:
 
     def get_dm(self, sender, message):
         '''
-        ability to receive DM's from another user.
+        ability to *receive* DM's from another user.
+
+        parameters
+        -----------
+        - sender = ''
+        - message = ''
+
         if the user isn't blocked, then the message will be saved to self.dms
-        with the senders name as the key
+        with the senders name as the key, and the user will be notified.
         '''
         # is this sender blocked?
         if sender not in self.blocked:
@@ -95,10 +97,10 @@ class User:
 
     def read_all_dms(self):
         '''
-        displays and returns a list of messages from other users. 
+        displays and returns a list of messages from other users as a string.
         '''
-        dms = []
         if len(self.dms) > 0:
+            dms = []
             for sender in self.dms:
                 dms.append(f'{sender} : \n{self.dms[sender]}\n')
             dms_str = ' '.join(dms)

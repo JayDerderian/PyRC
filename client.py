@@ -87,7 +87,6 @@ def message():
     while True:
         # get message from user. 
         '''NOTE: display() will provide a wrapper here when it's ready'''
-        # message = message = input(f'{CLIENT_INFO["Current Room"]} {CLIENT_INFO["Name"]} > ')
         message = input(f'{CLIENT_INFO["Name"]} > ')
 
         # display local help menu
@@ -111,8 +110,6 @@ def run_client():
     '''
     main client method for application. 
     handles message I/O and shuts down if a server disconnects.
-
-    NOTE: maybe switch back to a try/except block soon?
     '''
     # main communication loop
     while True:
@@ -146,8 +143,8 @@ def run_client():
                 CLIENT_INFO["Current Room"] = message.split()[0]
             # display(message)
             '''NOTE: is this interferring with the write thread's input prompt?
-            for some reason messages from the server sort of over-lap with the text
-            from the input prompt.'''
+                     for some reason messages from the server sort of over-lap 
+                     with the text from the input prompt.'''
             print(message)
 
 # message parser to use with CLI

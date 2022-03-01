@@ -18,6 +18,10 @@ BUFFER_MAX = 2048
 CLIENT_MAX = 10
 DEFAULT_ROOM_NAME = '#lobby'
 
+# keeps track of active threads.
+# key is client (socket() object), value is thread
+ACTIVE_THREADS = {}
+
 # Application instance.
 APP = PyRC(debug=True)  
 
@@ -59,6 +63,13 @@ if DEBUG:
 # *******************************************************************************
 # TODO: add command parser? 
 #       maybe introduce a way to manually shut down server while it's running?
+#
+# TODO: look into thread limits? how many individual user threads can a small server
+#       handle?
+#    
+#       if __name__ == '__main__':
+#           while len(ACTIVE_THREADS) > n:
+#               run_server()
 # ******************************************************************************
 
 def run_server():
@@ -70,7 +81,14 @@ def run_server():
         client, address = SOCKET.accept()
         if DEBUG:
             logging.info(f'server.run_server() \nClient connected! Address: {address}\n') 
-
+        '''
+        TODO: modify this if-statement to account whether we've reached a thread limit!
+           
+              if len(ACTIVE_THREADS) < n:
+                  # new user
+                      ...
+                      etc...
+        '''
         # new user!
         if client not in SERVER_INFO["Sockets"]:
             # confirm connection to new user, and broadcast to app
@@ -84,6 +102,7 @@ def run_server():
                 logging.info(f'server.run_server() \nNew user - Name: {new_user},  Address:{address}\n')
                 print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
+            # NOTE: add address to SERVER_INFO["Users"]? 
             SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
@@ -93,11 +112,12 @@ def run_server():
             # create a new thread for this client to handle message I/O
             thread = Thread(target=handle, args=(client,))
             thread.start()
+            # ACTIVE_THREADS[client] = Thread(target=handle, args=(client,)
+            # ACTIVE_THREADS[client].start()
 
         # message from existing user (handled in separate thread!)
         else:
             ...
-
 
 '''
 NOTE: This loop operates on its own thread, and each new user gets a new thread 
@@ -108,7 +128,7 @@ NOTE: This loop operates on its own thread, and each new user gets a new thread
 '''
 def handle(client):
     '''
-    handles individual user I/O.
+    handles individual user I/O. operates in it's own thread.
     '''
     while True:
         # case where the server recieves a message 
@@ -119,6 +139,7 @@ def handle(client):
             user = find_user(client)[1]
             if DEBUG:
                 logging.info(f'server.handle() \nMessage from user: {user} \nMessage: {message}\n')
+                
             # parse message in app
             APP.message_parser(message, user, client)
 
@@ -130,17 +151,15 @@ def handle(client):
             if DEBUG:
                 logging.info(f'server.handle() \n{user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
 
-            # search for and remove user from chatroom if they disconnect
-            for room in APP.rooms:
-                if APP.rooms[room].has_user(user):
-                    APP.rooms[room].remove_client_from_room(user)
-            # remove user from APP's active user dictionary
-            del APP.users[user]
+            # remove user from APP instance
+            APP.remove_user(user)
             
             # remove user info from SERVER_INFO instance, and close socket
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
             client.close()
+            # del ACTIVE_THREADS[client]
+            
             print(f'{user} left the server!\n')
             break
 
