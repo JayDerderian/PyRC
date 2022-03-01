@@ -279,7 +279,11 @@ def test_parser_bad_input():
     res = irc.message_parser('/join room', test_user, test_socket)
     assert res == "/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n"
 
-    # TODO: add /leave tests!
+    res = irc.message_parser('/leave', test_user, test_socket)
+    assert res == "/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n"
+
+    res = irc.message_parser('/leave room', test_user, test_socket)
+    assert res == "/leave requires a #roomname argument to begin with '#'.\n"
 
     res = irc.message_parser('/create', test_user, test_socket)
     assert res == 'Error: must include a room name argument separated with a space \nex: /create #room_name'

@@ -33,6 +33,7 @@ def message_broadcast(room, sender_name, message, debug=False):
     if debug:
         logging.info(f'irc.message_broadcast() \nSending message from {sender_name} to room {room.name}: \nMessage: {message}\n')
     # Send the message to all clients in this room, including the sender. Excludes users who blocked sender!
+    # TODO: exclude sender? try it out first...
     for client in room.clients:
         if room.clients[client].has_blocked(sender_name):
             continue
@@ -611,6 +612,7 @@ class PyRC:
                 if self.debug:
                     logging.info(f'app.message_parser() /leave \nSending /leave error message to socket: \n {sender_socket}\n')
                 sender_socket.send("/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n".encode('ascii'))
+                return "/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n"
 
             # case where user wants to leave ALL their active rooms
             elif message.split()[1] == 'all':
@@ -624,6 +626,7 @@ class PyRC:
                     if self.debug:
                         logging.info(f'app.message_parser() /leave \nSending /leave #-syntax error message to socket: \n {sender_socket}\n')
                     sender_socket.send("/leave requires a #roomname argument to begin with '#'.\n".encode('ascii'))
+                    return "/leave requires a #roomname argument to begin with '#'.\n"
                 # leave room...
                 else:
                     if self.debug:
