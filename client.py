@@ -92,6 +92,7 @@ def message():
         # display local help menu
         if message.split()[0]=='/help':
             show_commands()
+
         # disconnect from server and exit application.
         elif message.split()[0] == '/quit':
             print('\n***Disconnecting!***')
@@ -99,6 +100,7 @@ def message():
                 logging.info(f'client.message() \nCommand used: {message.split()[0]} \nDisconnecting from server!\n')
             SOCKET.shutdown(2)
             SOCKET.close()
+    
         # send to server
         else:
             SOCKET.send(message.encode('ascii'))

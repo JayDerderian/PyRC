@@ -49,6 +49,8 @@ import os
 from sys import stdout, stdin
 from random import choice
 
+import rich
+
 from art import (
     tprint, text2art, aprint, art_dic, font_list,
     FONT_NAMES, decor, decor_dic, randart,

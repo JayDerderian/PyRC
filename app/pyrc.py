@@ -8,7 +8,6 @@ This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
 '''
 
-from email import message
 import logging
 
 from app.user import User
@@ -149,6 +148,13 @@ class PyRC:
         '''
         rooms = list(self.rooms.keys())
         return " ".join(rooms)
+
+    # returns true or false if a room exists
+    def is_room(self, room_name):
+        '''
+        is this an active room?
+        '''
+        return True if room_name in self.rooms.keys() else False
     
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
@@ -540,13 +546,6 @@ class PyRC:
                     logging.error(f'app.message_parser() /join \nERROR: no "#" in room name argument!\n')
                 sender_socket.send("/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n".encode('ascii'))
                 return "/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n"
-
-            # case where the user is already in the room
-            # ****NOTE: move this down to the loop in the else-block below?****
-            # NOTE: iterate through room dicts and check keys for current room!
-            elif message.split()[1] == self.users[sender_name].curr_room:
-                sender_socket.send(f'Error: you are already in {message.split()[1]}!')
-                return f'Error: you are already in {message.split()[1]}!'
             
             # otherwise try to join or create room(s).
             else:
@@ -562,12 +561,9 @@ class PyRC:
                         if room not in self.users[sender_name].curr_rooms:
                             self.join_room(room, sender_name, sender_socket)
                             self.users[sender_name].curr_rooms.append(room)
-                        else:
-                            sender_socket.send(f'You are already in {rooms_to_join[room]}!'.encode('ascii'))
                 else:
                     if self.debug:
                         logging.info(f'app.message_parser() /join \nattempting to join {message.split()[1]}...\n')
-                    # add conditon to check whether user is in this room here too...
                     self.join_room(message.split()[1], sender_name, sender_socket)
 
         ### Case where user wants to create a new room ###
@@ -645,78 +641,95 @@ class PyRC:
 
         ### Case where user wants list of other users in their current room ###
         elif message.split()[0] == "/users":
-            # get users current room
-            '''NOTE: iterate through app.rooms.clients to check each possible room for user'''
-            cur_room = self.users[sender_name].curr_room
-            # make sure cur_room is accurate...
-            if cur_room in self.rooms.keys():
-                # get user list from room
-                user_list = f'{cur_room} users: \n{self.rooms[cur_room].get_users()}'
-                sender_socket.send(user_list.encode('ascii'))
+            '''
+            syntax: /users #room_name
+            '''
+            # case where user forgets to add a room name argument
+            if len(message.split()) == 1:
+                sender_socket.send('Error: /users requires a room name argument \nex: /users #room_name'.encode('ascii'))
+
+            # case where room_name doesn't start with a '#'
+            elif '#' not in message.split()[1]:
+                sender_socket.send('Error: room name arg must start with "#" \nex: /users #room_name'.encode('ascii'))
+                
             else:
-                sender_socket.send(f'Error: unable to get users for room {cur_room}!'.encode('ascii'))
+                room = message.split()[1]
+                # case where the room doesn't actually exist
+                if room not in self.rooms.keys():
+                    sender_socket.send(f'Error: {room} doesnt exist!'.encode('ascii'))
 
         ### Case where user wants to send *distinct* messages to *multiple* rooms ###
-        # elif message.split()[0] == "/broadcast"
+        elif message.split()[0] == "/broadcast":
             '''
-            syntax: /broadcast #room1 <message> / #room2 <message> / ...
+            syntax: /broadcast #room1 : <message> / #room2 : <message> / ...
+            '''
+            # case where user forgets args
+            if len(message.split()) == 1:
+                sender_socket.send('Error: must include at least one room name and messsage! \nex: /broadcast #room_name : <message> /'.encode('ascii'))
+                return 'Error: must include at least one room name and messsage! \nex: /broadcast #room_name : <message> /'
             
-            remove /broadcast command 
-            message.pop(0)
+            # case where user doesn't include a message
+            elif len(message.split()) == 2:
+                sender_socket.send('Error: must include a message! \nex: /broadcast #room_name : <message> /'.encode('ascii'))
+                return 'Error: must include a message! \nex: /broadcast #room_name : <message> /'
 
-            TODO: implement!
+            # case where message doesn't end with a '/'
+            elif message.split()[-1] != '/':
+                sender_socket.send('Error: all messages must end with a "/" to denote ending. \nex: /broadcast #room_name : <message> /'.encode('ascii'))
+                return 'Error: all messages must end with a "/" to denote ending. \nex: /broadcast #room_name : <message> /'
 
-            NOTE: there's now chatroom.message_all_clients(sender, message)!
-                  this will be usefull with iterating through PyRC.rooms
-                  will need to chekc whether chatroom.clients is empty or not first
+            # otherwise, try to parse
+            else:
+                # remove /broadcast command
+                message_ = message.split()
+                message_.pop(0)
+                # get room name, then save each word to message list 
+                # "Rooms" = list of rooms (list[str]), "Messages" = list individual messages (list[str])
+                messages = {"Rooms": [], "Messages": []}
+                word = 0
+                while word < len(message_):
+                    # is this a room name?
+                    if message_[word][0] == '#' and message_[word + 1] == ':':
+                        messages['Rooms'].append(message_[word])
+                        word += 1
+                    # skip ':'
+                    elif message_[word] == ':':
+                        word+=1 
+                    # else, keep adding words until we reach '/'
+                    else:
+                        # start at current place in iteration
+                        w = word 
+                        message_text = []
+                        while w < len(message_):
+                            if message_[w] == '/': # have we reached the end of the message?
+                                break
+                            elif message_[w][-1] == '/': # did the user accidentally attach '/' to the last word?
+                                # remove /, then add to list
+                                wrd = message_[w].split()
+                                wrd.remove('/')
+                                message_text.append(str(wrd))
+                            else:
+                                message_text.append(message_[w])
+                            w += 1
+                        messages["Messages"].append(" ".join(message_text))
+                        word = w + 1 # update outer loop placement so we don't keep recopying the messages
 
-            NOTE: need to make sure the #room_name and message are bundled together,
-                  and that if someone were to include a '#' in their message that it wouldn't
-                  break the message apart!
+                # make sure the total number of room names equals the total number of messages
+                if len(messages['Rooms']) != len(messages['Messages']):
+                    sender_socket.send('Error: unequal amounts of rooms and messages!'.encode('ascii'))
+                    return 'Error: unequal amounts of rooms and messages!'
+                else:
+                    # send each message to each room
+                    for item in range(len(messages['Rooms'])):
+                        # get current room, send message
+                        rm = messages["Rooms"][item]
+                        msg = " ".join(messages["Messages"][item])
+                        if self.is_room(rm):
+                            message_broadcast(self.rooms[rm], sender_name, msg, self.debug)
+                        else:
+                            sender_socket.send(f'Error: {rm} doesnt exist!'.encode('ascii'))
 
-                  is there a way to store user's input in a dictionary with the room as the key
-                  and the value as the message? 
-
-                  first remove /broadcast command (message.pop(0)), then parse for room names 
-                  and messages 
-
-            NOTE: is there a way to get looped input from a user from a server? look into this!
-                  might be a lot simpler than trying to parse one long message! 
-
-                    broadcast/
-
-                    response: which rooms do you want to broadcast to?
-                    -> list all active rooms
-
-                    /broadcast #room_name1 <message1>
-                    /broadcast #room_name2 <message2>
-
-                    etc...
-                
-                loop:
-                    get room name, check if there's people in it
-                        
-                        if yes parse message: 
-
-                            loop:
-                                append individual words to message list 
-
-                                check for deliminator '/' to denote end of message!
-                                must have a whitespace on either side!
-                                
-                                check if '/' is accidentally stuck to the last letter of the
-                                last word in the message before another #room_name is 
-                                listed?
-
-                                    check if any words starting with '#' are active rooms
-                                    in the server!
-
-                                    if word1[-1:] == '/' and word2[0] == '#' and word2 in app.rooms.keys()
-                    
-                            send message to #room_name
-
-                        else, skip 
-            '''
+                return messages
 
         ### Case where user wants to directly message another user ###
         elif message.split()[0] == "/message":
@@ -789,12 +802,7 @@ class PyRC:
         elif message.split()[0] == '/whisper':
             '''
             syntax: /whisper @<user_name>
-            '''    
-
-            # check if user is in same room with username arg aver /whisper. if so, check if sender
-            # is blocked by receiver of /whisper. if not, then send message with the syntax:
-            # <whisper> <sender> : <message>
-
+            '''   
             # case where there's no username or text argument
             if len(message.split()) == 1:
                 if self.debug:

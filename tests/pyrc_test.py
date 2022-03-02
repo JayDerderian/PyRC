@@ -134,7 +134,7 @@ def test_join_multiple_rooms():
     rooms_to_join = ['test_room 1', 'test_room 2', 'test_room 3']
     for room in rooms_to_join:
         test_app.join_room(room, test_user)
-    
+
     # confirm they've been added to these rooms
     for room in test_app.rooms:
         assert test_app.rooms[room].has_user(test_user)
@@ -264,6 +264,30 @@ def test_unblock_user():
     assert test_user2 not in test_app.users[test_user1].blocked
     print('...ok!')
 
+def test_broadcast():
+    print('testing broadcast...')
+    test_app = PyRC()
+    test_user1 = 'test_user1'
+    test_socket1 = mock.Mock()
+    test_app.add_user(test_user1, test_socket1)
+
+    msg = '/broadcast #room1 : hello room 1! / #room2 : hello room 2! / #room3 : hello room 3! /'
+
+    room_names = ['#room1', '#room2', '#room3']
+    messages = ['hello room 1!', 'hello room 2!', 'hello room 3!']
+
+    res = test_app.message_parser(msg, test_user1, test_socket1)
+    assert res != 'Error: must include at least one room name and messsage! \nex: /broadcast #room_name : <message> /'
+    assert res != 'Error: must include a message! \nex: /broadcast #room_name : <message> /'
+    assert res != 'Error: unequal amounts of rooms and messages!'
+    assert type(res) == dict
+    assert 'Rooms' in res.keys()
+    assert 'Messages' in res.keys()
+    assert len(res['Rooms']) == len(res['Messages'])
+    assert room_names == res['Rooms']
+    assert messages == res['Messages']
+    print("...ok!")
+
 def test_parser_bad_input():
     print('testing parser with bad commands...')
     irc = PyRC()
@@ -296,6 +320,15 @@ def test_parser_bad_input():
 
     res = irc.message_parser('/message @user1 @user2', test_user, test_socket)
     assert res == 'Error: /message only takes one username argument. \nex: /message @<user_name> <message>'
+
+    res = irc.message_parser('/broadcast', test_user, test_socket)
+    assert res == 'Error: must include at least one room name and messsage! \nex: /broadcast #room_name : <message> /'
+
+    res = irc.message_parser('/broadcast #room', test_user, test_socket)
+    assert res == 'Error: must include a message! \nex: /broadcast #room_name : <message> /'
+
+    res = irc.message_parser('/broadcast #room hello there', test_user, test_socket)
+    assert res == 'Error: all messages must end with a "/" to denote ending. \nex: /broadcast #room_name : <message> /'
 
     res = irc.message_parser('/dms user1', test_user, test_socket)
     assert res == 'Error: /message requires a "@" character to denote a user, ie @user_name'
@@ -333,6 +366,7 @@ def run_PyRC_tests():
     test_get_all_users_in_app()
     test_block_user()
     test_unblock_user()
+    test_broadcast()
     test_parser_bad_input()
     
     print('\n...done!')
