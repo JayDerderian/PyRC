@@ -555,6 +555,7 @@ class PyRC:
             # otherwise try to join or create room(s).
             else:
                 # check if there's more than one room argument
+                # TODO: figure out why I'm still unable to join multiple rooms. 
                 if len(message.split()) > 2:
                     if DEBUG:
                         logging.info(f'app.message_parser() /join \nattempting to join multiple rooms...\n')

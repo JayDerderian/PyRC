@@ -5,6 +5,10 @@ PyRC app testing
 from unittest import mock
 from app.pyrc import PyRC
 
+'''
+TODO: add tests using parser! check functionality with CORRECT parser messages,
+      not just the functions called by the parser
+'''
 
 def test_instantiation():
     print('testing app instantiation...')
@@ -85,8 +89,17 @@ def test_create_room():
     assert '#test_room' in test_app.rooms.keys()
     assert len(test_app.rooms) > 1
     assert test_app.rooms['#test_room'].has_user(test_user)
-    print('...ok!')
 
+    # remove room and try with parser
+    del test_app.rooms['#test_room']
+
+    msg = '/create #test_room'
+    test_app.message_parser(msg, test_user, test_socket)
+    assert '#test_room' in test_app.rooms.keys()
+    assert len(test_app.rooms) > 1
+    assert test_app.rooms['#test_room'].has_user(test_user)
+
+    print('...ok!')
 
 def test_join_single_room():
     print('testing joining non-existant chatroom ...')
@@ -102,6 +115,18 @@ def test_join_single_room():
     assert len(test_app.rooms) > 1
     assert test_app.rooms['#test_room'].has_user(test_user)
     assert test_user in test_app.rooms['#test_room'].clients.keys()
+
+    # try with parser
+    del test_app.rooms['#test_room']
+
+    msg = '/join #test_room'
+    test_app.message_parser(msg, test_user, test_socket)
+
+    assert '#test_room' in test_app.rooms.keys()
+    assert len(test_app.rooms) > 1
+    assert test_app.rooms['#test_room'].has_user(test_user)
+    assert test_user in test_app.rooms['#test_room'].clients.keys()
+
     print('...ok!')
 
 
@@ -122,6 +147,19 @@ def test_join_pre_existing_room():
     assert len(test_app.rooms['#test_room'].clients) == 2
     assert test_user in test_app.rooms['#test_room'].clients.keys()
     assert test_user2 in test_app.rooms['#test_room'].clients.keys()
+
+    # try with parser
+    del test_app.rooms['#test_room']
+    test_app.create_room('#test_room', test_user)
+    test_app.join_room('#test_room', test_user2)
+
+    msg = '/join #test_room'
+    test_app.message_parser(msg, test_user, test_socket)
+
+    assert len(test_app.rooms['#test_room'].clients) == 2
+    assert test_user in test_app.rooms['#test_room'].clients.keys()
+    assert test_user2 in test_app.rooms['#test_room'].clients.keys()
+
     print('...ok!')
 
 
@@ -139,7 +177,38 @@ def test_join_multiple_rooms():
     # confirm they've been added to these rooms
     for room in test_app.rooms:
         assert test_app.rooms[room].has_user(test_user)
+
+    # try with parser
+    for room in rooms_to_join:
+        del test_app.rooms[room]
+    
+    msg = '/join #test_room1 #test_room2 #test_room3'
+    test_app.message_parser(msg, test_user, test_socket)
+
+    for room in test_app.rooms:
+        assert test_app.rooms[room].has_user(test_user)
+
     print('...ok!')
+
+
+def test_join_multiple_rooms_with_parser():
+    print("testing joining multiple rooms using parser...")
+    test_app = PyRC()
+    test_user = 'test_user'
+    test_socket = mock.Mock()
+    test_app.add_user(test_user, test_socket)  
+
+    msg = '/join #room1 #room2 #room3'
+    test_app.message_parser(msg, test_user, test_socket)
+
+    assert '#room1' in test_app.rooms.keys()
+    assert '#room2' in test_app.rooms.keys()
+    assert '#room3' in test_app.rooms.keys()
+    assert test_user in test_app.rooms['#room1'].clients.keys()
+    assert test_user in test_app.rooms['#room2'].clients.keys()
+    assert test_user in test_app.rooms['#room3'].clients.keys()
+    print("...ok!")
+
 
 def test_leave_room():
     print("testing leaving a room...")
@@ -154,7 +223,19 @@ def test_leave_room():
 
     assert len(test_app.rooms['#test_room'].clients) == 0
     assert test_user in test_app.rooms['#lobby'].clients.keys()
+
+    # try with parser
+    del test_app.rooms['#test_room']
+    test_app.create_room('#test_room', test_user)
+
+    msg = '/leave #test_room'
+    test_app.message_parser(msg, test_user, test_socket)
+
+    assert len(test_app.rooms['#test_room'].clients) == 0
+    assert test_user in test_app.rooms['#lobby'].clients.keys()
+
     print('...ok!')
+
 
 def test_leaving_all_rooms():
     print("testing leaving all active rooms...")
@@ -164,7 +245,7 @@ def test_leaving_all_rooms():
     test_app.add_user(test_user, test_socket)
 
     test_room_names = ['Room A', 'Room B', 'Room C', 'Room D', 'Room E']
-    # add  to five rooms
+    # add five rooms
     for add in range(5):
         test_app.create_room(test_room_names[add], test_user)
     # make sure they're there
@@ -185,7 +266,35 @@ def test_leaving_all_rooms():
     assert '#lobby' in test_app.users[test_user].curr_rooms
     # make sure user is still in #lobby client dict
     assert test_user in test_app.rooms['#lobby'].clients.keys()
+
+    # try with parser
+    for room in test_room_names:
+        del test_app.rooms[room]
+    
+    # add five rooms
+    for add in range(5):
+        test_app.create_room(test_room_names[add], test_user)
+    # make sure they're there
+    for name in range(5):
+        assert test_app.rooms[test_room_names[name]].has_user(test_user)
+
+    msg = '/leave all'
+    test_app.message_parser(msg, test_user, test_socket)
+    
+    # make sure they've been removed from all
+    for name in range(5):
+        assert len(test_app.rooms[test_room_names[name]].clients) == 0
+    # make sure users' active room list has been updated accordingly
+    for name in range(5):
+        assert test_room_names[name] not in test_app.users[test_user].curr_rooms
+
+    # make sure #lobby is still in curr_room list
+    assert '#lobby' in test_app.users[test_user].curr_rooms
+    # make sure user is still in #lobby client dict
+    assert test_user in test_app.rooms['#lobby'].clients.keys()
+
     print("...ok!")
+
 
 def test_get_all_users_in_app():
     print('testing getting list of all users in app...')
@@ -205,6 +314,7 @@ def test_get_all_users_in_app():
     user_keys = list(test_app.users.keys())
 
     assert user_list.split() == user_keys
+  
     print('...ok!')
 
 
@@ -227,7 +337,9 @@ def test_get_single_room_users():
 
     assert user_list.split() == user_keys
     assert user_list != '#lobby does not exist!'
+
     print('...ok!')
+
 
 def test_block_user():
     print('testing blocking a user...')
@@ -245,7 +357,9 @@ def test_block_user():
 
     assert test_user2 in test_app.users[test_user1].blocked
     assert test_user2 not in test_app.users[test_user1].dms.keys()
+
     print('...ok!')
+
 
 def test_unblock_user():
     print('testing unblocking a user...')
@@ -263,7 +377,9 @@ def test_unblock_user():
 
     test_app.unblock(test_user1, test_user2)
     assert test_user2 not in test_app.users[test_user1].blocked
+
     print('...ok!')
+
 
 def test_broadcast():
     print('testing broadcast...')
@@ -287,9 +403,11 @@ def test_broadcast():
     assert len(res['Rooms']) == len(res['Messages'])
     assert room_names == res['Rooms']
     assert messages == res['Messages']
+
     print("...ok!")
 
-def test_parser_bad_input():
+
+def test_parser_with_bad_input():
     print('testing parser with bad commands...')
     irc = PyRC()
     test_user = 'test_user1'
@@ -364,6 +482,7 @@ def run_PyRC_tests():
     test_join_single_room()
     test_join_pre_existing_room()
     test_join_multiple_rooms()
+    test_join_multiple_rooms_with_parser()
     test_leave_room()
     test_leaving_all_rooms()
     test_get_single_room_users()
@@ -371,7 +490,7 @@ def run_PyRC_tests():
     test_block_user()
     test_unblock_user()
     test_broadcast()
-    test_parser_bad_input()
+    test_parser_with_bad_input()
     
     print('\n...done!')
 
