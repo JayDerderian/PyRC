@@ -261,9 +261,6 @@ class PyRC:
             # unless they only had #lobby on their list after they left their
             # current room.
             self.rooms[room_to_leave].remove_client_from_room(sender_name)
-
-            print(f'{room_to_leave} clients: {self.rooms[room_to_leave].clients.keys()}')
-
             self.users[sender_name].curr_rooms.remove(room_to_leave)
             exit_message = f'{sender_name} left {room_to_leave}!'
             
@@ -559,16 +556,18 @@ class PyRC:
             else:
                 # check if there's more than one room argument
                 if len(message.split()) > 2:
+                    if DEBUG:
+                        logging.info(f'app.message_parser() /join \nattempting to join multiple rooms...\n')
                     rooms_to_join = []
                     for word in message.split():
                         if word[0] == '#':
                             rooms_to_join.append(word)
                     # attempt to add user to these rooms
                     for room in rooms_to_join:
-                        # make sure user isn't already in this room
-                        if room not in self.users[sender_name].curr_rooms:
-                            self.join_room(room, sender_name, sender_socket)
-                            self.users[sender_name].curr_rooms.append(room)
+                        if DEBUG:
+                            logging.info(f'app.message_parser() /join \nattempting to join {room}...\n')
+                        self.join_room(room, sender_name, sender_socket)
+                        self.users[sender_name].curr_rooms.append(room)
                 else:
                     if DEBUG:
                         logging.info(f'app.message_parser() /join \nattempting to join {message.split()[1]}...\n')
