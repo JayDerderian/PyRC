@@ -140,6 +140,13 @@ class PyRC:
         users = list(self.users.keys())
         return " ".join(users)
 
+    # returns true or false if a room exists
+    def is_room(self, room_name):
+        '''
+        is this an active room?
+        '''
+        return True if room_name in self.rooms.keys() else False
+
     # returns a list of active rooms
     def list_all_rooms(self):
         '''
@@ -148,12 +155,13 @@ class PyRC:
         rooms = list(self.rooms.keys())
         return " ".join(rooms)
 
-    # returns true or false if a room exists
-    def is_room(self, room_name):
+    # get a list of rooms a user is active in
+    def list_my_rooms(self, sender_name):
         '''
-        is this an active room?
+        returns a str of rooms a user is active in
         '''
-        return True if room_name in self.rooms.keys() else False
+        room_list = self.users[sender_name].curr_rooms
+        return " ".join(room_list)
     
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
@@ -463,6 +471,9 @@ class PyRC:
         - /rooms
             - list all currently active rooms in app instance
 
+        - /myrooms
+            - list all rooms a user is active in
+
         - /join #room_name (opt) #room_name2 #room_name3 ...
             - join a chatroom. a new one will be created if it doesn't already exist.
             - to join multiple rooms, add additional room names separated by a space
@@ -639,13 +650,17 @@ class PyRC:
                     # this sends the user back to the #lobby!
                     self.leave_room(room_to_leave, sender_name)
 
-        ### Case where user wants to list all active rooms ###:
+        ### Case where user wants to list all active rooms ###
         elif message.split()[0] == "/rooms":
             if len(self.rooms) > 0:
                 rooms = f'Active rooms: \n{self.list_all_rooms()}'
                 sender_socket.send(rooms.encode('ascii'))
             else:
                 sender_socket.send('Error: no active rooms!'.encode('ascii'))
+
+        ### Case where a user wants a list of all their active rooms ###
+        elif message.split()[0] == '/myrooms':
+            self.list_my_rooms(sender_name)
 
         ### Case where user wants list of other users in their current room ###
         elif message.split()[0] == "/users":
