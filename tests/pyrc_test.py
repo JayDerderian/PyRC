@@ -303,6 +303,9 @@ def test_parser_bad_input():
     res = irc.message_parser('/join room', test_user, test_socket)
     assert res == "/join requires a #room_name argument with '#' in front.\nPlease enter: /join #roomname\n"
 
+    res = irc.message_parser('/join #room room', test_user, test_socket)
+    assert res == 'Error: incorrect syntax! all room names must start with a "#"'
+
     res = irc.message_parser('/leave', test_user, test_socket)
     assert res == "/leave requires a #room_name argument.\nPlease enter: /leave #roomname\n"
 

@@ -2,8 +2,8 @@
 /venv
 /.vscode
 /old files
-IRC_Client.log
-IRC_Server.log
-IRC_App.log
-IRC_Chatroom.log
-IRC_User.log
+PyRC_Client.log
+PyRC_Server.log
+PyRC_App.log
+PyRC_Chatroom.log
+PyRC_User.log

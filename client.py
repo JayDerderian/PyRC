@@ -8,13 +8,11 @@ Handles front end of client application, user message input,
 and communicates with the server.
 '''
 
-import logging
 import socket
 from threading import Thread
 
 from ui.tui import TUI
 from info import APP_INFO, CLIENT_COMMANDS
-
 
 # Constants
 HOST = socket.gethostname()
@@ -33,8 +31,9 @@ CLIENT_INFO = {
 # Debugging stuff. Set DEBUG to true to activate logging.
 DEBUG = True
 if DEBUG:
+    import logging
     # start a log file for debugging
-    logging.basicConfig(filename='IRC_Client.log', 
+    logging.basicConfig(filename='PyRC_Client.log', 
                         filemode='w', 
                         level=logging.DEBUG, 
                         format='%(asctime)s %(message)s', 

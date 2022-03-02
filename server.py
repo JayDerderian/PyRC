@@ -4,7 +4,7 @@ CS 594
 
 Server module. Also runs main IRC application (app.py).
 '''
-import logging
+
 import socket
 from threading import Thread
 
@@ -23,7 +23,7 @@ DEFAULT_ROOM_NAME = '#lobby'
 ACTIVE_THREADS = {}
 
 # Application instance.
-APP = PyRC(debug=True)  
+APP = PyRC()  
 
 # Server info
 SERVER_INFO = {
@@ -34,8 +34,9 @@ SERVER_INFO = {
 # Debugging stuff. Set DEBUG to True to activate logging.
 DEBUG = True
 if DEBUG:
+    import logging
     # start a log file for debugging
-    logging.basicConfig(filename='IRC_Server.log', 
+    logging.basicConfig(filename='PyRC_Server.log', 
                         filemode='w', 
                         level=logging.DEBUG, 
                         format='%(asctime)s %(message)s', 
