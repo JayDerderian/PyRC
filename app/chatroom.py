@@ -4,8 +4,8 @@ chatroom class module.
 
 DEBUG = True
 
+import logging
 if DEBUG:
-    import logging
     logging.basicConfig(filename='PyRC_Chatroom.log', 
         filemode='w', 
         level=logging.debug, 

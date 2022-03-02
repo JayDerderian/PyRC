@@ -2,10 +2,10 @@
 user class module
 '''
 
+import logging
 
 DEBUG = True
 if DEBUG:
-    import logging
     logging.basicConfig(filename='PyRC_User.log', 
                     filemode='w', 
                     level=logging.DEBUG, 

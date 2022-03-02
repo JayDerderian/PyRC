@@ -101,6 +101,7 @@ def test_join_single_room():
     assert '#test_room' in test_app.rooms.keys()
     assert len(test_app.rooms) > 1
     assert test_app.rooms['#test_room'].has_user(test_user)
+    assert test_user in test_app.rooms['#test_room'].clients.keys()
     print('...ok!')
 
 

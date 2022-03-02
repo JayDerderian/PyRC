@@ -7,6 +7,7 @@ Application module - the core functionality of the IRC Chat program.
 This handles tracking of clients and their associated sockets, sending
 and recieving messages, message parsing, and other neccessary functionality.
 '''
+import logging
 
 from app.user import User
 from app.chatroom import Chatroom
@@ -16,7 +17,6 @@ DEFAULT_ROOM_NAME = '#lobby'
 # set DEBUG to True to active logging.
 DEBUG = True
 if DEBUG:
-    import logging
     logging.basicConfig(filename='PyRC_App.log', 
             filemode='w', 
             level=logging.DEBUG, 
@@ -190,7 +190,7 @@ class PyRC:
             # Case where the user is already there
             if self.rooms[room_to_join].has_user(sender_name):
                 if DEBUG:
-                    logging.info(f'app.join_room() \n{sender_name} attempted to join a room they are in! room {room_to_join}\n')
+                    logging.info(f'app.join_room() \n{sender_name} attempted to join a room they are in! room: {room_to_join}\n')
                 self.users[sender_name].send('You are already in this room, silly!'.encode('ascii'))
 
             # add to room
@@ -566,12 +566,12 @@ class PyRC:
                     for room in rooms_to_join:
                         if DEBUG:
                             logging.info(f'app.message_parser() /join \nattempting to join {room}...\n')
-                        self.join_room(room, sender_name, sender_socket)
+                        self.join_room(room, sender_name)
                         self.users[sender_name].curr_rooms.append(room)
                 else:
                     if DEBUG:
                         logging.info(f'app.message_parser() /join \nattempting to join {message.split()[1]}...\n')
-                    self.join_room(message.split()[1], sender_name, sender_socket)
+                    self.join_room(message.split()[1], sender_name)
 
         ### Case where user wants to create a new room ###
         elif message.split()[0] == '/create':
@@ -654,16 +654,17 @@ class PyRC:
             # case where user forgets to add a room name argument
             if len(message.split()) == 1:
                 sender_socket.send('Error: /users requires a room name argument \nex: /users #room_name'.encode('ascii'))
-
             # case where room_name doesn't start with a '#'
             elif '#' not in message.split()[1]:
                 sender_socket.send('Error: room name arg must start with "#" \nex: /users #room_name'.encode('ascii'))
-                
             else:
                 room = message.split()[1]
                 # case where the room doesn't actually exist
                 if room not in self.rooms.keys():
                     sender_socket.send(f'Error: {room} doesnt exist!'.encode('ascii'))
+                # send user list
+                else:
+                    sender_socket.send(f'{room} users: {self.rooms[room].get_users()}'.encode('ascii'))
 
         ### Case where user wants to send *distinct* messages to *multiple* rooms ###
         elif message.split()[0] == "/broadcast":
