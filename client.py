@@ -86,7 +86,8 @@ def message():
     while True:
         # get message from user. 
         '''NOTE: display() will provide a wrapper here when it's ready'''
-        message = input(f'{CLIENT_INFO["Name"]} > ')
+        print()
+        message = input()
 
         # display local help menu
         if message.split()[0]=='/help':

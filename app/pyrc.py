@@ -161,7 +161,9 @@ class PyRC:
         returns a str of rooms a user is active in
         '''
         room_list = self.users[sender_name].curr_rooms
-        return " ".join(room_list)
+        room_list = " ".join(room_list)
+        self.users[sender_name].send(room_list.encode('ascii'))
+        return room_list
     
     # Check if the room name begins with '#', check if user is already in the room,
     # create the room if it does not exist, then join the room the user specified
@@ -258,7 +260,6 @@ class PyRC:
             if DEBUG:
                 logging.info(f'app.leave_room() \nUser {sender_name} isnt in that room!\n')   
             self.users[sender_name].send(f'Error: You are not in {room_to_leave}\n'.encode('ascii'))
-            print("wasn't in that room!")
 
         # otherwise leave
         else:
@@ -718,7 +719,7 @@ class PyRC:
                         word += 1
                     # skip ':'
                     elif message_[word] == ':':
-                        word+=1 
+                        word += 1 
                     # else, keep adding words until we reach '/'
                     else:
                         # start at current place in iteration
@@ -731,7 +732,8 @@ class PyRC:
                             elif message_[w][-1] == '/': # did the user accidentally attach '/' to the last word?
                                 # remove /, then add to list
                                 wrd = list(message_[w]).remove('/')
-                                message_text.append(str(wrd))
+                                wrd = " ".join(wrd)
+                                message_text.append(wrd)
                                 break # exit loop since this was meant to denote the end of the message
                             else:
                                 message_text.append(message_[w])
@@ -844,11 +846,6 @@ class PyRC:
 
             # otherwise, get receiver name and send to method
             else:
-                '''
-                NOTE: look into a way to do the pop/.join stuff
-                      using list slicing instead. 
-                      seems like a lot of unnecessary steps here.
-                '''
                 message_ = message.split()
                 # remove command
                 message_.pop(0)

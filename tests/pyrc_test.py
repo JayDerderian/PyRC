@@ -5,10 +5,6 @@ PyRC app testing
 from unittest import mock
 from app.pyrc import PyRC
 
-'''
-TODO: add tests using parser! check functionality with CORRECT parser messages,
-      not just the functions called by the parser
-'''
 
 def test_instantiation():
     print('testing app instantiation...')
@@ -95,10 +91,10 @@ def test_create_room():
 
     msg = '/create #test_room'
     test_app.message_parser(msg, test_user, test_socket)
+
     assert '#test_room' in test_app.rooms.keys()
     assert len(test_app.rooms) > 1
     assert test_app.rooms['#test_room'].has_user(test_user)
-
     print('...ok!')
 
 def test_join_single_room():

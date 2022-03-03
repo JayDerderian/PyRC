@@ -4,7 +4,7 @@ CS 594
 
 Server module. Also runs main IRC application (app.py).
 '''
-
+import logging
 import socket
 from threading import Thread
 
@@ -34,7 +34,6 @@ SERVER_INFO = {
 # Debugging stuff. Set DEBUG to True to activate logging.
 DEBUG = True
 if DEBUG:
-    import logging
     # start a log file for debugging
     logging.basicConfig(filename='PyRC_Server.log', 
                         filemode='w', 
@@ -82,14 +81,7 @@ def run_server():
         client, address = SOCKET.accept()
         if DEBUG:
             logging.info(f'server.run_server() \nClient connected! Address: {address}\n') 
-        '''
-        TODO: modify this if-statement to account whether we've reached a thread limit!
-           
-              if len(ACTIVE_THREADS) < n:
-                  # new user
-                      ...
-                      etc...
-        '''
+
         # new user!
         if client not in SERVER_INFO["Sockets"]:
             # confirm connection to new user, and broadcast to app
@@ -103,7 +95,6 @@ def run_server():
                 logging.info(f'server.run_server() \nNew user - Name: {new_user},  Address:{address}\n')
                 print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
             SERVER_INFO["Sockets"].append(client)
-            # NOTE: add address to SERVER_INFO["Users"]? 
             SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
             print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
