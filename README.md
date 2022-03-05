@@ -29,8 +29,8 @@ python Client.py
 
 # Client Commands
 ```(No command) <message>```: Send a message to all the rooms you're active in.  
-```/rooms```: List all active rooms in the server.
-```/myrooms```: List all the rooms you're active in.
+```/rooms```: List all active rooms in the server.                               
+```/myrooms```: List all the rooms you're active in.                                 
 
 ```/join```: Adds client to an existing room, or creates and joins a room if the room does not exist.  
 ```
@@ -44,7 +44,7 @@ python Client.py
 ```
 /leave #coding -or- /leave all
 ```
-```/users```: List all user in the server.
+```/users```: List all user in the server.                                                             
 ```/broadcast```: Send *distinct* messages to *multiple* rooms, regardless if you're in those rooms.
 ```
 /broadcast #room1 : <message1> / #room2 : <message2 / 
@@ -69,7 +69,7 @@ python Client.py
 ```
 /unblock @user_name
 ```
-```/help```: Display available commands
+```/help```: Display available commands                                                               
 ```/quit```: Disconnects the client from the server.  
 
 # License
