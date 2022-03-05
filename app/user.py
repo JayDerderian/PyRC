@@ -2,19 +2,9 @@
 user class module
 '''
 
-import logging
-
-DEBUG = True
-if DEBUG:
-    logging.basicConfig(filename='PyRC_User.log', 
-                    filemode='w', 
-                    level=logging.DEBUG, 
-                    format='%(asctime)s %(message)s',
-                    datefmt='%m/%d/%Y %I:%M:%S %p')
-
 class User:
     '''
-    User class. Keeps track of a user's name, current room, and 
+    User class. Keeps track of a user's name, current rooms, and 
     their socket() object.
 
     Also handles direct message functionality (both asynchronous and not), 
@@ -38,14 +28,10 @@ class User:
 
         always preceed with if User.has_blocked(sender) == False !!
         '''
-        if DEBUG:
-            logging.info(f'user.send() user: {self.name} \nsending encoded ascii message: {message} \nvia socket: \n{self.socket}\n')
         if type(message) != bytes:
-            if DEBUG:
-                logging.error(f'user.send() \nuser: {self.name} \nERROR: message not in correct format! \
-                                Must be a series of bytes using ascii encoding. \nReceived: {message} \nType: {type(message)}\n')
             self.socket.send(f'Error: message not in correct format! Must be a series of bytes using ascii encoding.'.encode('ascii'))
-        self.socket.send(message)
+        else:
+            self.socket.send(message)
 
     def get_dm(self, sender, message):
         '''
@@ -67,8 +53,6 @@ class User:
             # otherwise add to their list of messages
             else:
                 self.dms[sender].extend(message)
-            if DEBUG:
-                logging.info(f'user.get_dm() \n{sender} sent message {message}\n')
             # send an alert message to receiver
             self.send(f'New message from {sender}! \nUse /dms @{sender} to read'.encode('ascii'))
         else:
@@ -80,18 +64,12 @@ class User:
         '''
         if len(self.dms) > 0:
             if user in self.dms.keys():
-                if DEBUG:
-                    logging.info(f'user.read_dm() \nsender: {user} \nmessage: {self.dms[user]}\n')
                 self.send(f'{user}: \n{self.dms[user]}'.encode('ascii'))
                 return f'{user}: \n{self.dms[user]}'
             else:
-                if DEBUG:
-                    logging.error(f'user.read_dm() \nERROR: no messages from user: {user}!\n')
                 self.send(f'No messages from {user}!\n'.encode('ascii'))
                 return f'No messages from {user}!'
         else:
-            if DEBUG:
-                logging.info('user.read_dm() \nNo messages!\n')
             self.send('No messages!'.encode('ascii'))
             return 'No messages!'
 
@@ -104,8 +82,6 @@ class User:
             for sender in self.dms:
                 dms.append(f'{sender} : \n{self.dms[sender]}\n')
             dms_str = ' '.join(dms)
-            if DEBUG:
-                logging.info(f'user.read_all_dms() \nuser: {self.name} \nmessages: {dms_str}\n')
             self.send(dms_str.encode('ascii'))
             return dms_str
         else:

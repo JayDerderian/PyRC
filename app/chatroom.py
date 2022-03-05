@@ -2,17 +2,6 @@
 chatroom class module.
 '''
 
-DEBUG = True
-
-import logging
-if DEBUG:
-    logging.basicConfig(filename='PyRC_Chatroom.log', 
-        filemode='w', 
-        level=logging.debug, 
-        format='%(asctime)s %(message)s', 
-        datefmt='%m/%d/%Y %I:%M:%S %p')
-
-
 class Chatroom:
     '''
     chatroom class. keeps track of clients in a dictionary (key = username, value = user_socket)
@@ -46,8 +35,6 @@ class Chatroom:
         ------------
         - new_user = User() object
         '''
-        if DEBUG:
-            logging.info(f'chatroom.add_new_client_to_room() \nAdding: {new_user.name} \nsocket: {new_user.socket}\n')
         # add the client if they're not already here
         if new_user.name not in self.clients.keys():
             self.clients[new_user.name] = new_user
@@ -60,20 +47,17 @@ class Chatroom:
     def remove_client_from_room(self, user):
         '''
         remove a client from a chatroom. 
-        does not modify users curr_room list!
+        
+        **does not modify users curr_room list!**
 
         parameters
         -----------
         - user = '' (client to remove)
         '''
-        if DEBUG:
-            logging.info(f'chatroom.remove_client_from_room() \nRemoving {user} from {self.name}...\n')
         if user in self.clients.keys():
             del self.clients[user]
         else:
-            print(f'ERROR: {user} is not in {self.name}!')
-            if DEBUG:
-                logging.error(f'chatroom.remove_client_from_room() \nERROR: {user} was not in room {self.name}!')
+            return f'ERROR: {user} is not in {self.name}!'
 
     # send a message to all users in chatroom
     def message_all_clients(self, sender, message):

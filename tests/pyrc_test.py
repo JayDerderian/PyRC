@@ -80,6 +80,7 @@ def test_create_room():
 
     test_app.add_user(test_user, test_socket)
 
+    # create non-existant room
     test_app.create_room('#test_room', test_user)
 
     assert '#test_room' in test_app.rooms.keys()
@@ -166,23 +167,31 @@ def test_join_multiple_rooms():
     test_socket = mock.Mock()
     test_app.add_user(test_user, test_socket)
 
-    rooms_to_join = ['test_room 1', 'test_room 2', 'test_room 3']
+    rooms_to_join = ['#test_room1', '#test_room2', '#test_room3']
     for room in rooms_to_join:
         test_app.join_room(room, test_user)
+    # #lobby + 3 new rooms
+    assert len(test_app.rooms) == 4
 
-    # confirm they've been added to these rooms
+    # confirm the user has been added to these rooms
     for room in test_app.rooms:
         assert test_app.rooms[room].has_user(test_user)
+        assert test_user in test_app.rooms[room].clients.keys()
 
     # try with parser
     for room in rooms_to_join:
         del test_app.rooms[room]
-    
+    # make sure we only have the #lobby    
+    assert len(test_app.rooms) == 1    
+
     msg = '/join #test_room1 #test_room2 #test_room3'
     test_app.message_parser(msg, test_user, test_socket)
 
+    assert len(test_app.rooms) == 4
+
     for room in test_app.rooms:
         assert test_app.rooms[room].has_user(test_user)
+        assert test_user in test_app.rooms[room].clients.keys()
 
     print('...ok!')
 
