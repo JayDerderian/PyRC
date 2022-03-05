@@ -72,5 +72,3 @@ python Client.py
 ```/help```: Display available commands                                                               
 ```/quit```: Disconnects the client from the server.  
 
-# License
-
