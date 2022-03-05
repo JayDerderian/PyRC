@@ -32,15 +32,15 @@ python Client.py
 ```/rooms```: List all active rooms in the server.                               
 ```/myrooms```: List all the rooms you're active in.                                 
 
-```/join```: Adds client to an existing room, or creates and joins a room if the room does not exist.  
+```/join```: Adds client to an existing room, or creates and joins a room if the room does not exist. User can join multiple rooms at once. 
 ```
-/join #coding -or- /join #room1 #room2
+/join #coding -or- /join #room1 #room2 #room3
 ```
 ```/create```: Create a new room if it doesn't already exist.
 ```
 /create #room
 ```
-```/leave```: Removes a client from a room. Removes the room from the server when the last client leaves.  
+```/leave```: Removes a client from a room. Removes the room from the server when the last client leaves. Use 'all' argument to leave all active rooms except the #lobby. 
 ```
 /leave #coding -or- /leave all
 ```
@@ -51,7 +51,7 @@ python Client.py
 ```
 ```/message```: Send a direct message to another user. 
 ```
-/message @user_name
+/message @user_name <message>
 ```
 ```/dms```: Retrieve your direct messages. Add a user name argument to get messages from a specified user.
 ```
