@@ -3,7 +3,6 @@
 * [Technologies](#Technologies)
 * [Installation](#Installation)
 * [Client Commands](#ClientCommands)
-* [License](#License)
 
 # Introduction
 This project implements a client and server for an Internet Relay Chat (IRC) application. 
@@ -29,21 +28,48 @@ python Client.py
 ```
 
 # Client Commands
-```/list```: Lists all rooms in the server.  
+```(No command) <message>```: Send a message to all the rooms you're active in.  
+```/rooms```: List all active rooms in the server.
+```/myrooms```: List all the rooms you're active in.
+
 ```/join```: Adds client to an existing room, or creates and joins a room if the room does not exist.  
 ```
-/join #coding
+/join #coding -or- /join #room1 #room2
+```
+```/create```: Create a new room if it doesn't already exist.
+```
+/create #room
 ```
 ```/leave```: Removes a client from a room. Removes the room from the server when the last client leaves.  
 ```
-/leave #coding
+/leave #coding -or- /leave all
 ```
-```/send```: Sends a message to a room the client has joined. Can send to multiple rooms.  
+```/users```: List all user in the server.
+```/broadcast```: Send *distinct* messages to *multiple* rooms, regardless if you're in those rooms.
 ```
-/send #coding Boy I sure love Python!
-/send #coding #python Look at this IRC app I made!
+/broadcast #room1 : <message1> / #room2 : <message2 / 
 ```
-```/members```: Lists all clients in the room the user is currently in.  
+```/message```: Send a direct message to another user. 
+```
+/message @user_name
+```
+```/dms```: Retrieve your direct messages. Add a user name argument to get messages from a specified user.
+```
+/dms -or- /dms @user_name
+```
+```/whisper```: Directly message another user in real-time, regardless if they're in the same room as you.
+```
+/whisper @user_name
+```
+```/block```: Block a user.
+```
+/block @user_name
+```
+```/unblock```: Unblock a user.
+```
+/unblock @user_name
+```
+```/help```: Display available commands
 ```/quit```: Disconnects the client from the server.  
 
 # License

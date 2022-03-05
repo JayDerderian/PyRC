@@ -38,11 +38,8 @@ class PyRC:
     this class is instantiated. PyRC() also keeps tracks of current users 
     and their socket info.
 
-    PyRC.message_parser(message:str, user_name, user_socket) is the main point 
-    of entry for this application. All message strings recieved from the client 
-    should be sent through here.
-
-    Initialize PyRC(debug=True) to create a logger and terminal read outs
+    PyRC.message_parser() is the main point of entry for this application. 
+    All message strings recieved from the client should be sent through here.
     '''
     def __init__(self):
 
@@ -101,6 +98,9 @@ class PyRC:
     
     # get a list of active users in a specific room
     def get_users(self, room, sender_socket):
+        '''
+        get all active users in a specified room.
+        '''
         if room in self.rooms.keys():
             users = self.rooms[room].get_users()
             sender_socket.send(users.encode('ascii'))
@@ -200,7 +200,8 @@ class PyRC:
     # remove user from room and delete room if it is empty
     def leave_room(self, room_to_leave, sender_name):
         '''
-        leave a Chatroom() instance. will remove room if it's empty.
+        leave a Chatroom() instance.
+
         sends user back to last room on their curr_rooms list, or back
         to the #lobby if that's the only other name on the list. 
 
@@ -230,18 +231,13 @@ class PyRC:
             if len(self.rooms[room_to_leave].clients) > 0:
                 message_broadcast(self.rooms[room_to_leave], sender_name, exit_message)
 
-            # send user back to previous room if needed
+            # send user back to previous room 
             # user should still get messages from all the rooms they're active in. 
-            # this just checks whether there's a discrepancy between their active room list
-            # and the actual users in those rooms. 
-            # this check (hopefully) won't ever actually be used, it's just an extra failsafe.
             if len(self.users[sender_name].curr_rooms) > 1:
                 prev_room = self.users[sender_name].curr_rooms[-1]
-                # if the user isn't listed as a client in that room for some reason...
-                if sender_name not in self.rooms[prev_room].clients.keys():
-                    self.rooms[prev_room].add_new_client_to_room(self.users[sender_name])
-                    join_message = f'{sender_name} joined {prev_room}!'
-                    message_broadcast(self.rooms[prev_room], sender_name, join_message)
+                self.rooms[prev_room].add_new_client_to_room(self.users[sender_name])
+                join_message = f'{sender_name} joined {prev_room}!'
+                message_broadcast(self.rooms[prev_room], sender_name, join_message)
 
             # ...otherwise they'll be in the #lobby by default
             else:
@@ -309,8 +305,7 @@ class PyRC:
         # otherwise, try to send whisper
         else:
             # remove command and username arguments, then send message text
-            message_text = message.split()
-            message_text = message_text[2:]
+            message_text = message.split()[2:]
             message_text = f'/whisper @{sender_name}: {" ".join(message_text)}'
             # send message to receiver
             self.users[receiver].send(message_text.encode('ascii'))
@@ -358,7 +353,6 @@ class PyRC:
     def block(self, user_name, to_block):
         '''
         blocks a user from DM'ing someone. 
-        this is a wrapper for User().block(user_name)
         '''
         self.users[user_name].block(to_block)
 
@@ -366,7 +360,6 @@ class PyRC:
     def unblock(self, user_name, to_unblock):
         '''
         unblocks a user. 
-        this is a wrapper for User().unblock(user_name)
         '''
         self.users[user_name].unblock(to_unblock)
     
@@ -447,9 +440,7 @@ class PyRC:
             - specify <from_user> if you want to see messages from a specific person.
 
         - /whisper @<user_name> <message>
-            - directly message another user in real-time if they are in the same
-              chatroom as you. these messages won't be seen by other users in the 
-              room.
+            - directly message another user in real-time.
 
         - /block <user_name>
             - block DM's from other users
@@ -496,23 +487,14 @@ class PyRC:
             else:
                 # check if there's more than one room arguments 
                 # if so, join multiple rooms 
-                '''
-                TODO: Figure out why I'm still unable to join multiple rooms!!! 
-                      It's passing the unit test and as far as I know the test is sound?
-                ''' 
                 if len(message.split()) > 2:
-                    # print(f'TEST: raw message : {message}\n')
                     rooms_to_join = []
                     for word in message.split():
                         if word[0] == '#':
                             rooms_to_join.append(word)
-                    # print(f'TEST: rooms to join : {rooms_to_join}\n')
                     # attempt to add user to these rooms
                     for room in rooms_to_join:
-                        # print(f'TEST: joining room : {room}\n')
                         self.join_room(room, sender_name)
-                        # print(f'TEST: Room {room} \nUsers: {self.rooms[room].get_users()} \n{room} client info: {self.rooms[room].clients}\n')
-                        # print(f'TEST: users active rooms list: {self.users[sender_name].curr_rooms}\n')
                 # otherwise join single room
                 else:
                     self.join_room(message.split()[1], sender_name)

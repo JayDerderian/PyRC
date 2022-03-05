@@ -71,12 +71,10 @@ except:
 # display available commands
 def show_commands():
     ''''
-    display available commands and how to join/leave rooms 
+    display available commands
     '''
-    # for key in CLIENT_COMMANDS:
-    #     print(CLIENT_COMMANDS[key])
-    return print("Not ready yet!\n")
-
+    for key in CLIENT_COMMANDS:
+        print(CLIENT_COMMANDS[key])
 
 # messaging functionality
 def message():
