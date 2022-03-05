@@ -59,7 +59,7 @@ python Client.py
 ```
 ```/whisper```: Directly message another user in real-time, regardless if they're in the same room as you.
 ```
-/whisper @user_name
+/whisper @user_name <message>
 ```
 ```/block```: Block a user.
 ```
