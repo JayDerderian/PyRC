@@ -89,7 +89,7 @@ def run_client():
                 #     display('SERVER OFFLINE! Closing connection...')
                 # else:
                 #     print('\nSERVER OFFLINE! Closing connection...')
-                print('\nSERVER OFFLINE! Closing connection...')
+                print('\nSERVER OFFLINE! Closing connection...\n')
                 SOCKET.close() 
                 break
             # otherwise its some other message
@@ -127,17 +127,11 @@ def display(message):
 
 
 ### DRIVER CODE ###
-
-# driver code. 
 if __name__ == '__main__':
 
     ### START UP ###
-
-    # display welcome message
-    app_info(APP_INFO)
-
-    # get the username
-    CLIENT_INFO["Name"] = input('Enter username > ')
+    app_info(APP_INFO)                                 # display welcome message
+    CLIENT_INFO["Name"] = input('Enter username > ')   # get the username
 
     # Create a new socket using IPv4 address familty (AF_INET) and TCP protocol (SOCK_STREAM)
     SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -150,19 +144,14 @@ if __name__ == '__main__':
         print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
         
         ### MAIN THREADS ###
-        '''
-        TODO:
-            Find a way to handle when one of these shuts down while the other is going. 
-            Need to find some sort of thread shut down exception that will shut down
-            the other thread if one of them suddenly shuts down.
-        '''
         # this uses two separate threads: one for receiving messages, and one for writing.
         rt = threading.Thread(name='receive thread', target=run_client)
         wt = threading.Thread(name='write thread', target=message)
         rt.start()
         wt.start()
+        # this continually checks to make sure each thread is running. 
+        # its janky af, but it seems to work...
         try:
-            # checks to make sure each thread is running. this is hacky af, but it seems to work...
             while rt.is_alive() and wt.is_alive():
                 pass
         except threading.ThreadError:
