@@ -89,6 +89,9 @@ class PyRC:
         - user_name = ''
         '''
         if user_name in self.users.keys():
+            # this could iterate over lots of rooms that don't have
+            # this user, but it will make sure the user is definitively
+            # removed in the off chance their curr_rooms list is inaccurate.
             for room in self.rooms:
                 if self.rooms[room].has_user(user_name):
                     self.rooms[room].remove_client_from_room(user_name) 
@@ -719,14 +722,9 @@ class PyRC:
 
             # otherwise, get receiver name and send to method
             else:
-                message_ = message.split()    # remove command
-                message_.pop(0)  
-                receiver = message_[0]        # get receiver's name & remove @ symbol
-                receiver = self.parse_user_name(receiver)
-                '''
+                # get receiver's name, then message text
                 receiver = self.parse_user_name(message[1])
                 message_text = message[2:]
-                '''
                 self.send_whisper(sender_name, message_, receiver)
 
         ### Case where user wants to block DM's from another user ###

@@ -2,7 +2,7 @@
 Jay Derderian
 CS 594
 
-This module handles the cli for this application. 
+This module handles the TUI for this application. 
 Randomly assigns a font color and background color for a chatroom.
 
 NOTE:
@@ -45,8 +45,7 @@ NOTE:
 
 '''
 import os
-
-from sys import stdout, stdin
+import sys
 from random import choice
 
 import rich
@@ -69,7 +68,10 @@ class TUI:
 
     made using ANSI Escape Sequence color constants and the termcolor module
 
-    MAY NOT WORK IN ALL TERMINALS. Depends on whether the OS has ANSI enabled, I think.
+    NOTE: MAY NOT WORK IN ALL TERMINALS. 
+    
+    Depends on whether the OS has ANSI enabled.
+    Use supports_colors() before instantiating TUI()!
     '''
     def __init__(self, debug=False):
         
@@ -151,16 +153,6 @@ class TUI:
                 raise TypeError('font name must be a string!')
         return tprint(f'{app_name}')
 
-    def app_info(self, info:dict):
-        '''
-        displays app info
-        (author, version # (with date))
-        '''
-        print(text2art(info["Name"], font='tarty2'))
-        print(art_dic.art_dic["kirby dance"], '\n')
-        print(text2art(info["Version"], font='tiny2'))
-        print(text2art(info["Author"], font='tiny2'), '\n')
-
 
     def client_menu(self, menu:list[str]):
         '''
@@ -179,6 +171,12 @@ class TUI:
 
         NOTE gets messages from the server in the format:
         {room.name} {sender_name} > {message}
+
+        TODO: Go through PyRC.py and see where message_broadcast
+        or self.users[username].send() is being used to determine
+        the different ways to parse message and add colors. only
+        add colors to room names and user names! Anything with
+        'Error: ' should have the word error colored in red!
         '''
         # break message apart, parse for #room name and message text.
         # add colors accordingly. 
@@ -196,3 +194,30 @@ class TUI:
                 print(f'{Fore.RED}{e} : {errors[e]}')
         else:
             raise TypeError('erros must be a single str or list[str]! type is:', type(errors))
+
+# App info display. Not contingent on a computers ability to support colors.
+def app_info(info:dict):
+    '''
+    displays app info
+    (author, version # (with date))
+    '''
+    print(text2art(info["Name"], font='tarty2'))
+    print(art_dic.art_dic["kirby dance"], '\n')
+    print(text2art(info["Version"], font='tiny2'))
+    print(text2art(info["Author"], font='tiny2'), '\n')
+
+
+def supports_color():
+    '''
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+
+    Technique from:
+    https://stackoverflow.com/questions/7445658/how-to-detect-if-the-console-does-support-ansi-escape-codes-in-python
+    '''
+    plat = sys.platform
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                  'ANSICON' in os.environ)
+    # isatty is not always implemented, #6223.
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    return supported_platform and is_a_tty

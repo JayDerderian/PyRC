@@ -4,9 +4,9 @@ CS 594
 
 Server module. Also runs main IRC application (app.py).
 '''
-import logging
+
 import socket
-from threading import Thread
+import threading
 
 from app.pyrc import PyRC
 
@@ -18,9 +18,18 @@ BUFFER_MAX = 2048
 CLIENT_MAX = 10
 DEFAULT_ROOM_NAME = '#lobby'
 
-# keeps track of active threads.
-# key is client (socket() object), value is thread
+# keeps track of active threads (individual users).
+# key is client (socket() object), value is thread() object
 ACTIVE_THREADS = {}
+'''
+TODO: 
+    look into thread limits? 
+    how many individual user threads can a small server handle?
+    
+    if __name__ == '__main__':
+        while len(ACTIVE_THREADS) > n:
+            run_server()
+'''
 
 # Application instance.
 APP = PyRC()  
@@ -29,95 +38,83 @@ APP = PyRC()
 SERVER_INFO = {
     "Sockets": [],  # list of client_socket objects
     "Users": [],    # list of tuples (client_socket object, client_username)
-}
+}                        
 
-# Debugging stuff. Set DEBUG to True to activate logging.
-DEBUG = True
-if DEBUG:
-    # start a log file for debugging
-    logging.basicConfig(filename='PyRC_Server.log', 
-                        filemode='w', 
-                        level=logging.DEBUG, 
-                        format='%(asctime)s %(message)s', 
-                        datefmt='%m/%d/%Y %I:%M:%S %p')
-                        
-
-#--------------------------------------START UP-------------------------------------------#
-
-
-# Create a new socket using IPv4 address familty (AF_INET),
-# and the TCP protocol (SOCK_STREAM)
-print('\n***starting server***')
-SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-SOCKET.bind(ADDR)
-print(f'\n...bound at host: {ADDR[0]}, port:{ADDR[1]}...')
-print('...listening...\n')
-SOCKET.listen(CLIENT_MAX)              # how many clients do we need to listen for?
-if DEBUG:
-    logging.info(f'server.py \nSERVER STARTED \nHost: {HOST}, Port: {PORT}\n')
-
-
-#-----------------------------------SERVER LOOP-----------------------------------------#
-
-
-# *******************************************************************************
-# TODO: add command parser? 
-#       maybe introduce a way to manually shut down server while it's running?
-#
-# TODO: look into thread limits? how many individual user threads can a small server
-#       handle?
-#    
-#       if __name__ == '__main__':
-#           while len(ACTIVE_THREADS) > n:
-#               run_server()
-# ******************************************************************************
-
-def run_server():
+class Server(threading.Thread):
     '''
-    runs communication loop
+    Class for handling everything server-related.
     '''
-    while True:
-        # allow clients to connect
-        client, address = SOCKET.accept()
-        if DEBUG:
-            logging.info(f'server.run_server() \nClient connected! Address: {address}\n') 
+    def __init__(self, host, port):
+        # start a new thread for this server
+        threading.Thread.__init__(self)
+        self.running = True
+        self.host = host
+        self.port = port
+        self.socket = None
+        self.clients = {} # Dict of active users. 
+                          # Key is user_name, value is socket() object
 
-        # new user!
-        if client not in SERVER_INFO["Sockets"]:
-            # confirm connection to new user, and broadcast to app
-            if DEBUG:
-                logging.info(f'server.run_server() \nSending new client connection confirmation...\n')
-            client.send('Connected to server'.encode('ascii'))
+    def run(self):
+        '''
+        Initializes a new socket() object and runs communication loop
+        '''
+        print('\n***starting server***')
 
-            # get user name since that's the first message
-            new_user = client.recv(BUFFER_MAX).decode('ascii')
-            if DEBUG:
-                logging.info(f'server.run_server() \nNew user - Name: {new_user},  Address:{address}\n')
-                print(f'adding new socket and user name to SERVER_INFO: \nuser: {new_user} \nsocket object: {client} ')
-            SERVER_INFO["Sockets"].append(client)
-            SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
-            print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
+        # Create a new socket using IPv4 address familty (AF_INET),
+        # and the TCP protocol (SOCK_STREAM)
+        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.socket.bind(ADDR)
+        self.socket.listen(CLIENT_MAX)
 
-            # add user to instance (and default room) and update user dict
-            APP.add_user(new_user, client)
-            
-            # create a new thread for this client to handle message I/O
-            thread = Thread(target=handle, args=(client,))
-            thread.start()
-            # ACTIVE_THREADS[client] = Thread(target=handle, args=(client,)
-            # ACTIVE_THREADS[client].start()
+        # self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, None)
+        print(f'\n...bound at host: {ADDR[0]}, port:{ADDR[1]}...')
+        print('...listening...\n')
 
-        # message from existing user (handled in separate thread!)
-        else:
-            ...
+        while self.running:
+            try:
+                # allow clients to connect
+                # this is a BLOCKING process! might interfere
+                # with the KeyboardInterrupt exception...
+                client, address = self.socket.accept()
+                # new user!
+                if client not in SERVER_INFO["Sockets"]:
+                    # confirm connection to new user, and broadcast to app
+                    client.send('Connected to server'.encode('ascii'))
 
-'''
-NOTE: This loop operates on its own thread, and each new user gets a new thread 
-      created for them when they join. 
+                    # get user name since that's the first message
+                    new_user = client.recv(BUFFER_MAX).decode('ascii')
+                    SERVER_INFO["Sockets"].append(client)
+                    SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
+                    print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
-      This is the current approach to asynchronous I/O, though it'll be worth it 
-      to look into this further!
-'''
+                    # add user to instance (and default room) and update user dict
+                    APP.add_user(new_user, client)
+
+                    # save client's socket object as value, key is user_name
+                    self.clients[new_user] = client
+                    # create a new thread for this client to handle message I/O
+                    ACTIVE_THREADS[client] = threading.Thread(target=handle, args=(client,))
+                    ACTIVE_THREADS[client].start()
+
+                # message from existing user (handled in separate thread!)
+                else:
+                    ...
+            except ConnectionResetError:
+                pass
+            # manual shut down???
+            except KeyboardInterrupt:
+                self.shut_down()
+
+    # handles server shut down
+    def shut_down(self):
+        '''
+        shut down the server
+        '''
+        self.running = False
+        self.socket.shutdown(socket.SHUT_RDWR)
+        self.socket.close()
+
+
 def handle(client):
     '''
     handles individual user I/O. operates in it's own thread.
@@ -128,10 +125,7 @@ def handle(client):
         try:
             message = client.recv(BUFFER_MAX).decode('ascii')
             # search user list for the username associated with this client
-            user = find_user(client)[1]
-            if DEBUG:
-                logging.info(f'server.handle() \nMessage from user: {user} \nMessage: {message}\n')
-                
+            user = find_user(client)[1]   
             # parse message in app
             APP.message_parser(message, user, client)
 
@@ -140,18 +134,18 @@ def handle(client):
             print("\n***USER DISCONNECT***")
             # search user list for the username associated with this client
             user = find_user(client)[1]
-            if DEBUG:
-                logging.info(f'server.handle() \n{user} left the server! \nsocket: {str(SERVER_INFO["Sockets"].index(client))}\n')
-
             # remove user from APP instance
             APP.remove_user(user)
             
             # remove user info from SERVER_INFO instance, and close socket
             SERVER_INFO["Sockets"].remove(client)
             SERVER_INFO["Users"].remove((client, user))
+            client.shutdown(socket.SHUT_RDWR)
             client.close()
-            # del ACTIVE_THREADS[client]
-            
+            # this is probably a terrible idea to simply delete the thread object, 
+            # but here we are for the moment...
+            # i wanted to avoid having empty threads running if a user leaves.
+            del ACTIVE_THREADS[client]
             print(f'{user} left the server!\n')
             break
 
@@ -162,7 +156,7 @@ def find_user(client):
 
     parameters
     ------------
-    - client = client socket() object
+    - user_name = ''
     
     returns a tuple (user_socket (socket(), user_name (str)))
     '''
@@ -171,7 +165,8 @@ def find_user(client):
     return SERVER_INFO["Users"][index[0]]
 
 
-#----------------------------------DRIVER CODE--------------------------------------#
-
+#### DRIVER CODE ####
 if __name__ == '__main__':
-    run_server()
+
+    server = Server(host=HOST, port=PORT)
+    server.run()
