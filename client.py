@@ -4,8 +4,7 @@ CS 594
 
 Client module. 
 
-Handles front end of client application, user message input, 
-and communicates with the server.
+Handles front end of client application, user message input, and communicates with the server.
 '''
 
 import socket
@@ -59,6 +58,7 @@ def message():
             print('\n***Disconnecting!***')
             SOCKET.shutdown(socket.SHUT_RDWR)
             SOCKET.close()
+            exit()
     
         # send to server
         else:
@@ -68,8 +68,7 @@ def message():
 # main client program
 def run_client():
     '''
-    main client method for application. 
-    handles message I/O and shuts down if a server disconnects.
+    main client method for application. handles messages from the server
 
     runs in its own thread.
     '''
@@ -162,10 +161,15 @@ if __name__ == '__main__':
         wt = threading.Thread(name='write thread', target=message)
         rt.start()
         wt.start()
-
-        # NEED TO CATCH THREAD EXCEPTIONS HERE-ISH
+        try:
+            # checks to make sure each thread is running. this is hacky af, but it seems to work...
+            while rt.is_alive() and wt.is_alive():
+                pass
+        except threading.ThreadError:
+            exit()
 
     except:
         print('...Could not connect!')
+        SOCKET.shutdown(socket.SHUT_RDWR)
         SOCKET.close()
         exit()

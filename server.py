@@ -21,24 +21,32 @@ DEFAULT_ROOM_NAME = '#lobby'
 # keeps track of active threads (individual users).
 # key is client (socket() object), value is thread() object
 ACTIVE_THREADS = {}
-'''
-TODO: 
-    look into thread limits? 
-    how many individual user threads can a small server handle?
-    
-    if __name__ == '__main__':
-        while len(ACTIVE_THREADS) > n:
-            run_server()
-'''
 
 # Application instance.
 APP = PyRC()  
 
-# Server info
+# Server session info. 
+# This external constant needs to be accessed by multiple threads, 
+# otherwise it would be a field in the server() class
 SERVER_INFO = {
     "Sockets": [],  # list of client_socket objects
     "Users": [],    # list of tuples (client_socket object, client_username)
-}                        
+}   
+
+def find_user(client):
+    '''
+    finds a user_name associated with a client socket object.
+
+    parameters
+    ------------
+    - user_name = ''
+    
+    returns a tuple (user_socket (socket(), user_name (str)))
+    '''
+    user_list = SERVER_INFO["Users"]
+    index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
+    return SERVER_INFO["Users"][index[0]]
+    
 
 class Server(threading.Thread):
     '''
@@ -51,8 +59,6 @@ class Server(threading.Thread):
         self.host = host
         self.port = port
         self.socket = None
-        self.clients = {} # Dict of active users. 
-                          # Key is user_name, value is socket() object
 
     def run(self):
         '''
@@ -90,8 +96,6 @@ class Server(threading.Thread):
                     # add user to instance (and default room) and update user dict
                     APP.add_user(new_user, client)
 
-                    # save client's socket object as value, key is user_name
-                    self.clients[new_user] = client
                     # create a new thread for this client to handle message I/O
                     ACTIVE_THREADS[client] = threading.Thread(target=handle, args=(client,))
                     ACTIVE_THREADS[client].start()
@@ -101,7 +105,6 @@ class Server(threading.Thread):
                     ...
             except ConnectionResetError:
                 pass
-            # manual shut down???
             except KeyboardInterrupt:
                 self.shut_down()
 
@@ -113,6 +116,7 @@ class Server(threading.Thread):
         self.running = False
         self.socket.shutdown(socket.SHUT_RDWR)
         self.socket.close()
+        print("\nSERVER OFFLINE!\n")
 
 
 def handle(client):
@@ -142,27 +146,8 @@ def handle(client):
             SERVER_INFO["Users"].remove((client, user))
             client.shutdown(socket.SHUT_RDWR)
             client.close()
-            # this is probably a terrible idea to simply delete the thread object, 
-            # but here we are for the moment...
-            # i wanted to avoid having empty threads running if a user leaves.
-            del ACTIVE_THREADS[client]
             print(f'{user} left the server!\n')
             break
-
-
-def find_user(client):
-    '''
-    finds a user_name associated with a client socket object.
-
-    parameters
-    ------------
-    - user_name = ''
-    
-    returns a tuple (user_socket (socket(), user_name (str)))
-    '''
-    user_list = SERVER_INFO["Users"]
-    index = [i for i, user_list in enumerate(user_list) if user_list[0] == client]
-    return SERVER_INFO["Users"][index[0]]
 
 
 #### DRIVER CODE ####
