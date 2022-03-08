@@ -16,6 +16,7 @@ class User:
         self.name = name                # user name
         self.socket = socket            # user's socket() object
         self.curr_rooms = [curr_room]   # list (list[str]) of room names user is active in
+        self.muted_rooms = []           # list of muted rooms
         
         self.blocked = []               # list of blocked users (list[str])
         self.dms = {}                   # dictionary of direct messages. 
@@ -32,6 +33,26 @@ class User:
             self.socket.send(f'Error: message not in correct format! Must be a series of bytes using ascii encoding.'.encode('ascii'))
         else:
             self.socket.send(message)
+
+    def has_muted(self, room):
+        '''
+        was this room muted?
+        '''
+        return True if room in self.muted_rooms else False
+    
+    def mute(self, room):
+        '''
+        mute a room
+        '''
+        if room not in self.muted_rooms:
+            self.muted_rooms.append(room)
+    
+    def unmute(self, room):
+        '''
+        unmute a room
+        '''
+        if room in self.muted_rooms:
+            self.muted_rooms.remove(room)
 
     def get_dm(self, sender, message):
         '''

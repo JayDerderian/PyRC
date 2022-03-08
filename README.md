@@ -49,6 +49,14 @@ python Client.py
 ```
 /broadcast #room1 : <message1> / #room2 : <message2 / 
 ```
+```/mute```: Mute output from selected rooms.
+```
+/mute #room1 #room2
+```
+```/unmute```: Unmute output from selected rooms
+```
+/unmute #room1 #room2
+```
 ```/message```: Send a direct message to another user. 
 ```
 /message @user_name <message>

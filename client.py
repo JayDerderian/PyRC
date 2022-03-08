@@ -6,7 +6,6 @@ Client module.
 
 Handles front end of client application, user message input, and communicates with the server.
 '''
-
 import socket
 import threading
 

@@ -27,6 +27,8 @@ def message_broadcast(room, sender_name, message):
     for client in room.clients:
         if room.clients[client].has_blocked(sender_name):
             continue
+        elif room.clients[client].has_muted(room.name):
+            continue
         room.clients[client].send(f'{room.name} {sender_name} : {message} '.encode('ascii'))
 
 
@@ -421,7 +423,13 @@ class PyRC:
             - leave current room. user will be sent back to #lobby by default 
             - if you are in the main lobby, you will be asked if you 
               want to exit. if yes, then client will terminate.
-        
+
+        - /mute #room1 (opt) #room2...
+            - mutes output from selected rooms that you're active in
+
+        - /unmute #room1 (opt) #room2...
+            - unmutes output from selected rooms
+
         - /users
             - list all other users in the room the client is currently in
 
@@ -662,6 +670,38 @@ class PyRC:
                             sender_socket.send(f'Error: {rm} doesnt exist!'.encode('ascii'))
 
                 return messages
+
+        ### Case where user wants to mute some of their active rooms ###
+        elif message.split()[0] == '/mute':
+            # case where user forgets #
+            if '#' not in message.split()[0]:
+                sender_socket.send('Error: command must start with a /!'.encode('ascii'))
+            # case where user forgets first arg
+            elif len(message.split()) == 1:
+                sender_socket.send('Error: must include at least one room name argument. \nex: /mute #roomname'.encode('ascii'))
+            # mute room(s)
+            else:
+                message_ = message.split()
+                for word in message_:
+                    # make sure this is actually a room name
+                    if word[0] == '#' and word in self.rooms.keys():
+                        self.users[sender_name].mute(word)
+    
+        ### Case where a user wants to unmute some of their active rooms
+        elif message.split()[0] == '/unmute':
+            # case where user forgets #
+            if '#' not in message.split()[0]:
+                sender_socket.send('Error: command must start with a /!'.encode('ascii'))
+            # case where user forgets first arg
+            elif len(message.split()) == 1:
+                sender_socket.send('Error: must include at least one room name argument. \nex: /mute #roomname'.encode('ascii'))
+            # otherwise unmute the room...
+            else:
+                message_ = message.split()
+                for word in message_:
+                    # make sure this is actually a room name
+                    if word[0] == '#' and word in self.rooms.keys():
+                        self.users[sender_name].unmute(word)
 
         ### Case where user wants to directly message another user ###
         elif message.split()[0] == "/message":
