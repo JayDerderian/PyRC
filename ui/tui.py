@@ -146,7 +146,6 @@ class TUI:
 
     ############### CLIENT UI ################
 
-
     def client_menu(self, menu:list[str]):
         '''
         displays a menu utilizing a list of strings representing 
@@ -205,7 +204,7 @@ class TUI:
         for room in range(len(orig_rooms)):
             ind = message_.index(orig_rooms[room])
             message_[ind] = new_rooms[room]
-            
+
         # display final message
         print(" ".join(message_))
 

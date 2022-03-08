@@ -1,9 +1,3 @@
-/docs
-/venv
 /.vscode
+/docs
 /old files
-PyRC_Client.log
-PyRC_Server.log
-PyRC_App.log
-PyRC_Chatroom.log
-PyRC_User.log
