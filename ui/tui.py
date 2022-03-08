@@ -6,7 +6,6 @@ This module handles the TUI for this application.
 Randomly assigns a font color and background color for a chatroom.
 '''
 
-import enum
 import os
 import sys
 from random import choice
@@ -179,17 +178,18 @@ class TUI:
     
     def get_colors(self, room):
         '''
-        retrieve associated fg/bg colors with this room
+        retrieve associated fg/bg colors with this room. assign one if it doesn't
+        have any already
         '''
-        return self.rooms[room] if room in self.rooms.keys() else None
+        return self.rooms[room] if room in self.rooms.keys() else self.assign_colors(room)
 
 
     def display(self, message):
         '''
-        take a message from the server, add a color to the room name
+        take a message from the server, add a color to the room name,
+        the display message
         '''
         # match room names with their foreground colors 
-        print(f"TUI TEST - rooms {list(self.rooms.keys())}")
         message_ = message.split()
         for word in message_:
             if word[0] == '#' and word in self.rooms.keys():

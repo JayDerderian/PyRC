@@ -18,7 +18,7 @@ from ui.tui import (
 from info import APP_INFO, CLIENT_COMMANDS
 
 
-# Constants
+### Constants ###
 HOST = socket.gethostname()
 PORT = 5050
 ADDR = (HOST, PORT)
@@ -52,27 +52,6 @@ TEXT_UI = TUI()
 #     '''
 #     SUPPORTS_COLOR = True
 
-
-# display available commands
-def show_commands():
-    ''''
-    display available commands
-    '''
-    for key in CLIENT_COMMANDS:
-        print(CLIENT_COMMANDS[key])
-
-# get room names from server
-def check_for_rooms(message):
-    # find room names
-    message_ = message.split()
-    for word in message_:
-        # make sure this is a room name and not just an acknowledgement that we've 
-        # joinded a room. 
-        if word[0] == '#' and word[-1] != '!' and word not in CLIENT_INFO['Rooms']:
-            CLIENT_INFO['Rooms'].append(word)
-        if SUPPORTS_COLOR:
-            # randomly assign a room name color and background color
-            TEXT_UI.assign_colors(message) 
 
 # messaging functionality
 def message():
@@ -142,6 +121,26 @@ def run_client():
         except ConnectionResetError:
             pass
 
+# display available commands
+def show_commands():
+    ''''
+    display available commands
+    '''
+    for key in CLIENT_COMMANDS:
+        print(CLIENT_COMMANDS[key])
+
+# get room names from server
+def check_for_rooms(message):
+    # find room names
+    message_ = message.split()
+    for word in message_:
+        # make sure this is a room name and not just an acknowledgement that we've 
+        # joinded a room. 
+        if word[0] == '#' and word[-1] != '!' and word not in CLIENT_INFO['Rooms']:
+            CLIENT_INFO['Rooms'].append(word)
+        if SUPPORTS_COLOR:
+            # randomly assign a room name color and background color
+            TEXT_UI.assign_colors(message) 
 
 
 ######## DRIVER CODE #########
