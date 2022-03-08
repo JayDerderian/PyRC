@@ -24,7 +24,6 @@ BUFFER_MAX = 2048
 CLIENT_INFO = {
     "Name": '',          # client user name
     "Address": ADDR,     # (host, port)
-    "Rooms": []          # list[str] of rooms active in the server. used by TUI.
 }
 
 #### TUI ####
@@ -44,7 +43,7 @@ def message():
     while True:
         # get message from user. 
         message = input()
-        print()
+        # print()
 
         # display local help menu
         if message.split()[0]=='/help':
@@ -62,11 +61,9 @@ def message():
             if SUPPORTS_COLOR and message.split()[0] == '/join':
                 # assign a color to this room if we're joining a new one
                 for word in message.split():
-                    if word[0] == '#' and word not in CLIENT_INFO['Rooms']:
-                        CLIENT_INFO['Rooms'].append(word)
+                    if word[0] == '#':
                         TEXT_UI.assign_colors(word)
             SOCKET.send(message.encode('ascii'))
-
 
 # main client program
 def run_client():
@@ -83,7 +80,7 @@ def run_client():
 
             # case where it's our first connection
             if message == 'Connected to server':
-                CLIENT_INFO['Rooms'].append('#lobby')
+                # CLIENT_INFO['Rooms'].append('#lobby')
                 if SUPPORTS_COLOR:
                     TEXT_UI.assign_colors('#lobby')
                 # send user name as the first message.

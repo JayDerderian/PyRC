@@ -190,18 +190,22 @@ class TUI:
         new_rooms = []
         orig_rooms = []
         message_ = message.split()
+
         # add ANSI colors to room name strings
         for word in message_:
             if word[0] == '#' and word in self.rooms.keys():
                 room_name_with_color = f'\n{self.rooms[word][0]}{word}{Fore.RESET}'
                 new_rooms.append(room_name_with_color)
                 orig_rooms.append(word)
+
         # make sure this worked
         assert len(new_rooms) == len(orig_rooms)
+
         # replace original instances with newly colorized room names
         for room in range(len(orig_rooms)):
             ind = message_.index(orig_rooms[room])
             message_[ind] = new_rooms[room]
+            
         # display final message
         print(" ".join(message_))
 
