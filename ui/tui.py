@@ -193,7 +193,7 @@ class TUI:
         # add ANSI colors to room name strings
         for word in message_:
             if word[0] == '#' and word in self.rooms.keys():
-                room_name_with_color = f'{self.rooms[word][0]}{word}{Fore.RESET}'
+                room_name_with_color = f'\n{self.rooms[word][0]}{word}{Fore.RESET}'
                 new_rooms.append(room_name_with_color)
                 orig_rooms.append(word)
         # make sure this worked

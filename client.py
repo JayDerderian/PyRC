@@ -56,9 +56,15 @@ def message():
             SOCKET.shutdown(socket.SHUT_RDWR)
             SOCKET.close()
             exit()
-    
+
         # send to server
         else:
+            if SUPPORTS_COLOR and message.split()[0] == '/join':
+                # assign a color to this room if we're joining a new one
+                for word in message.split():
+                    if word[0] == '#' and word not in CLIENT_INFO['Rooms']:
+                        CLIENT_INFO['Rooms'].append(word)
+                        TEXT_UI.assign_colors(word)
             SOCKET.send(message.encode('ascii'))
 
 
@@ -94,7 +100,6 @@ def run_client():
             # otherwise its some other message
             else:
                 # get any room names, assign colors as needed, then display
-                check_for_rooms(message)
                 if SUPPORTS_COLOR:
                     TEXT_UI.display(message)
                 else:
@@ -112,18 +117,18 @@ def show_commands():
     for key in CLIENT_COMMANDS:
         print(CLIENT_COMMANDS[key])
 
-# get room names from server
-def check_for_rooms(message):
-    # find room names
-    message_ = message.split()
-    for word in message_:
-        # make sure this is a room name and not just an acknowledgement that we've 
-        # joinded a room. 
-        if word[0] == '#' and word[-1] != '!' and word not in CLIENT_INFO['Rooms']:
-            CLIENT_INFO['Rooms'].append(word)
-        if SUPPORTS_COLOR:
-            # randomly assign a room name color and background color
-            TEXT_UI.assign_colors(message) 
+# # get room names from server
+# def check_for_rooms(message):
+#     # find room names
+#     message_ = message.split()
+#     for word in message_:
+#         # make sure this is a room name and not just an acknowledgement that we've 
+#         # joinded a room. 
+#         if word[0] == '#' and word[-1] != '!' and word not in CLIENT_INFO['Rooms']:
+#             CLIENT_INFO['Rooms'].append(word)
+#         if SUPPORTS_COLOR:
+#             # randomly assign a room name color and background color
+#             TEXT_UI.assign_colors(message) 
 
 
 ######## DRIVER CODE #########

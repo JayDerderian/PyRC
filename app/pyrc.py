@@ -227,7 +227,7 @@ class PyRC:
             # current room.
             self.rooms[room_to_leave].remove_client_from_room(sender_name)
             self.users[sender_name].curr_rooms.remove(room_to_leave)
-            exit_message = f'{sender_name} left {room_to_leave}!'
+            exit_message = f' {sender_name} left {room_to_leave}!'
             
             # make sure we don't broadcast to an empty room...
             if len(self.rooms[room_to_leave].clients) > 0:
@@ -273,7 +273,7 @@ class PyRC:
                 rooms_left.append(room_to_leave)
 
                 self.rooms[room_to_leave].remove_client_from_room(sender_name)
-                leave_message = f'{sender_name} left {room_to_leave}!'
+                leave_message = f' {sender_name} left {room_to_leave}!'
                 self.users[sender_name].send(leave_message.encode('ascii'))
                 message_broadcast(self.rooms[room_to_leave], sender_name, leave_message)
                  
