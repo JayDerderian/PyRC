@@ -7,10 +7,8 @@ Client module.
 Handles front end of client application, user message input, and communicates with the server.
 '''
 
-import os
 import socket
 import threading
-from sys import platform
 
 from ui.tui import (
     TUI, supports_color, app_info
@@ -29,29 +27,13 @@ CLIENT_INFO = {
     "Rooms": []          # list[str] of rooms active in the server. used by TUI.
 }
 
-
 #### TUI ####
 
-# This checks the OS and whether it can run ANSI escape codes.
-# If it can, then it'll enable them if they aren't already.
-# It is reverted when the client closes
-SUPPORTS_COLOR = True
-TEXT_UI = TUI()
-# if supports_color():
-#     # determine if this is a windows machine, if so, enable colors
-#     # MAKE SURE TO REVERSE IN CLIENT LOOP BELOW IF WE DO THIS!!!
-#     '''
-#     if platform == 'win32':     # windows
-#         os.system('colors')
-#         TEXT_UI = TUI()
-#         SUPPORTS_COLOR = True
-#     elif platform == 'darwin':  # mac
-#         ...
-#     elif platform == 'linux':   # linux
-#         ...
-#     '''
-#     SUPPORTS_COLOR = True
-
+# This checks whether a given terminal can display colors
+SUPPORTS_COLOR = False
+if supports_color():
+    TEXT_UI = TUI()
+    SUPPORTS_COLOR = True
 
 # messaging functionality
 def message():
@@ -62,6 +44,7 @@ def message():
     while True:
         # get message from user. 
         message = input()
+        print()
 
         # display local help menu
         if message.split()[0]=='/help':
@@ -176,8 +159,6 @@ if __name__ == '__main__':
         try:
             while rt.is_alive() and wt.is_alive():
                 pass
-        except BrokenPipeError:
-            exit()
         except threading.ThreadError:
             exit()
 
@@ -186,6 +167,9 @@ if __name__ == '__main__':
             TEXT_UI.error_messages('Unable to connect!')
         else:
             print('...Unable to connect!')
-        SOCKET.shutdown(socket.SHUT_RDWR)
-        SOCKET.close()
-        exit()
+        try:
+            SOCKET.shutdown(socket.SHUT_RDWR)
+            SOCKET.close()
+            exit()
+        except:
+            exit()

@@ -9,18 +9,17 @@ Randomly assigns a font color and background color for a chatroom.
 import os
 import sys
 from random import choice
-from winreg import EnumValue
 
 from art import (
     tprint, text2art, aprint, art_dic, font_list,
     FONT_NAMES, decor, decor_dic, randart,
-) 
+)
+
+import colorama
 from colorama import (
     Fore, Back, Style
 )
-from termcolor import (
-    colored, cprint
-)
+colorama.init(autoreset=True)
 
 class TUI:
     '''
@@ -156,8 +155,6 @@ class TUI:
         for line in menu:
             print(text2art(menu[line], font='tiny2'))
 
-    ################ APP UI ##################
-
     def assign_colors(self, message):
         '''
         assign a text color and background color for a chatroom
@@ -190,13 +187,23 @@ class TUI:
         the display message
         '''
         # match room names with their foreground colors 
+        new_rooms = []
+        orig_rooms = []
         message_ = message.split()
+        # add ANSI colors to room name strings
         for word in message_:
             if word[0] == '#' and word in self.rooms.keys():
-                message_[message_.index(word)] = f'{self.rooms[word][0]}{word}{Fore.RESET}'
-        msg = ' '.join(message_)
-        print(msg)
-
+                room_name_with_color = f'{self.rooms[word][0]}{word}{Fore.RESET}'
+                new_rooms.append(room_name_with_color)
+                orig_rooms.append(word)
+        # make sure this worked
+        assert len(new_rooms) == len(orig_rooms)
+        # replace original instances with newly colorized room names
+        for room in range(len(orig_rooms)):
+            ind = message_.index(orig_rooms[room])
+            message_[ind] = new_rooms[room]
+        # display final message
+        print(" ".join(message_))
 
     def shut_down_message(self, message):
         '''
@@ -242,14 +249,42 @@ def app_info(info:dict):
 def supports_color():
     '''
     Returns True if the running system's terminal supports color using 
-    ANSI escape codes.
+    ANSI escape codes in Windows. 
 
     Technique from:
-    https://stackoverflow.com/questions/7445658/how-to-detect-if-the-console-does-support-ansi-escape-codes-in-python
+        https://stackoverflow.com/questions/7445658/how-to-detect-if-the-console-does-support-ansi-escape-codes-in-python
+        https://github.com/django/django/blob/main/django/core/management/color.py
     '''
-    plat = sys.platform
-    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
-                                                  'ANSICON' in os.environ)
+    def vt_codes_enabled_in_windows_registry():
+        """
+        Check the Windows Registry to see if VT code handling has been enabled
+        by default, see https://superuser.com/a/1300251/447564.
+        """
+        try:
+            # winreg is only available on Windows.
+            import winreg
+        except ImportError:
+            return False
+        else:
+            reg_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Console")
+            try:
+                reg_key_value, _ = winreg.QueryValueEx(reg_key, "VirtualTerminalLevel")
+            except FileNotFoundError:
+                return False
+            else:
+                return reg_key_value == 1
+
     # isatty is not always implemented, #6223.
-    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-    return supported_platform and is_a_tty
+    is_a_tty = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+
+    return is_a_tty and (
+        sys.platform != "win32"
+        or "ANSICON" in os.environ
+        or
+        # Windows Terminal supports VT codes.
+        "WT_SESSION" in os.environ
+        or
+        # Microsoft Visual Studio Code's built-in terminal supports colors.
+        os.environ.get("TERM_PROGRAM") == "vscode"
+        or vt_codes_enabled_in_windows_registry()
+    )

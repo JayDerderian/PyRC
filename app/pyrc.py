@@ -24,11 +24,10 @@ def message_broadcast(room, sender_name, message):
     - message = '' message string
     '''
     # Send the message to all clients in this room, including the sender. Excludes users who blocked sender!
-    # TODO: exclude sender? try it out first...
     for client in room.clients:
         if room.clients[client].has_blocked(sender_name):
             continue
-        room.clients[client].send(f'{room.name} {sender_name} : {message}'.encode('ascii'))
+        room.clients[client].send(f'{room.name} {sender_name} : {message} '.encode('ascii'))
 
 
 # The container that has rooms, which have lists of clients
