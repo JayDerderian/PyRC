@@ -4,51 +4,13 @@ CS 594
 
 This module handles the TUI for this application. 
 Randomly assigns a font color and background color for a chatroom.
-
-NOTE:
-    read these:
-        -> https://stackoverflow.com/questions/287871/how-to-print-colored-text-to-the-terminal
-        -> http://patorjk.com/software/taag/#p=display&f=Alpha&t=ART
-        -> https://pypi.org/project/art/
-        -> https://www.geeksforgeeks.org/print-colors-python-terminal/
-        -> https://en.wikipedia.org/wiki/ANSI_escape_code#Colors
-    
-
-    find a way to detect system and determine which library to use?
-    some command terminals might not work with these libraries...
-
-    execute during import lines, possiblity in def __init(self)__?
-    ex:
-        if os.getenv('ANSI_COLORS_DISABLED') is None:
-
-    the goal is to make this module reusable between projects!
-
-    cool fonts (text2art):
-        - tarty1 & tarty2
-        - alligator
-        - charact4
-        - tiles
-        - isometric2
-        - tinker-toy
-        - usaflag
-        - dietcola
-        - 1943
-        - slant
-        - soft
-        - alpha
-        - threepoint
-        - georgia11
-        - block
-        - fireing
-        - strikethrough
-        - rev
-
 '''
+
+import enum
 import os
 import sys
 from random import choice
-
-import rich
+from winreg import EnumValue
 
 from art import (
     tprint, text2art, aprint, art_dic, font_list,
@@ -58,7 +20,7 @@ from colorama import (
     Fore, Back, Style
 )
 from termcolor import (
-    colored, COLORS
+    colored, cprint
 )
 
 class TUI:
@@ -76,6 +38,13 @@ class TUI:
     def __init__(self, debug=False):
         
         self.debug = debug
+
+        self.rooms = {}   # key is room name, value is a list with fg color and bg color
+        self.names = {}   # key is user name, value is assigned color
+
+        ######################
+        # ANSI COLOR STRINGS #
+        ######################
 
         # text functionality
         self.alts = {
@@ -119,6 +88,48 @@ class TUI:
             'lightgrey': '\033[47m'
         }
 
+        ####################
+        # COLORAMA STRINGS #
+        ####################
+
+        # foreground colors
+        self.colorfg = {
+            'black': Fore.BLACK,
+            'blue': Fore.BLUE,
+            'cyan': Fore.CYAN,
+            'green': Fore.GREEN,
+            'magenta': Fore.MAGENTA, 
+            'red': Fore.RED,
+            'white': Fore.WHITE,
+            'yellow': Fore.YELLOW,
+            'light black': Fore.LIGHTBLACK_EX,
+            'light blue': Fore.LIGHTBLUE_EX,
+            'light cyan': Fore.LIGHTCYAN_EX,
+            'light green': Fore.LIGHTGREEN_EX,
+            'light magenta': Fore.LIGHTMAGENTA_EX,
+            'light red': Fore.LIGHTRED_EX,
+            'light white': Fore.LIGHTWHITE_EX,
+            'light yellow': Fore.LIGHTYELLOW_EX,
+        }
+
+        self.colorbg = {
+            'black': Back.BLACK,
+            'blue': Back.BLUE,
+            'cyan': Back.CYAN,
+            'green': Back.GREEN,
+            'magenta': Back.MAGENTA,
+            'red': Back.RED,
+            'white': Back.WHITE,
+            'yellow': Back.YELLOW,
+            'light black': Back.LIGHTBLACK_EX,
+            'light blue': Back.LIGHTBLUE_EX,
+            'light cyan': Back.LIGHTCYAN_EX,
+            'light green': Back.LIGHTGREEN_EX,
+            'light magenta': Back.LIGHTMAGENTA_EX,
+            'light red': Back.LIGHTRED_EX,
+            'light white': Back.LIGHTWHITE_EX,
+            'light yellow': Back.LIGHTYELLOW_EX,
+        }
 
     ## TESTER ###
 
@@ -127,7 +138,7 @@ class TUI:
         print('\n', text2art(text='HELLO', font=f))
         print(f'\nFONT: {f}\n')
         
-    ## FANCY STUFF ##
+    ############## FANCY STUFF ###############
 
     def rainbow_word(self, word):
         '''
@@ -135,23 +146,7 @@ class TUI:
         '''
         letters = word.split()
 
-    ## CLIENT UI ##
-
-    def app_name(self, app_name:str, f=None):
-        '''
-        welcome! should display the app name, author,
-        version.
-        then display options
-            - join new room?
-            - see current room list
-            - 
-        '''
-        if f is not None:
-            if type(f) == str:
-                return tprint(f'{app_name}', font=f)
-            else:
-                raise TypeError('font name must be a string!')
-        return tprint(f'{app_name}')
+    ############### CLIENT UI ################
 
 
     def client_menu(self, menu:list[str]):
@@ -162,36 +157,73 @@ class TUI:
         for line in menu:
             print(text2art(menu[line], font='tiny2'))
 
-    ## APP UI ##
+    ################ APP UI ##################
 
-    def add_colors(self, message):
+    def assign_colors(self, message):
         '''
-        add color to #room_name, text color to message text and
-        a background color as well. 
-
-        NOTE gets messages from the server in the format:
-        {room.name} {sender_name} > {message}
-
-        TODO: Go through PyRC.py and see where message_broadcast
-        or self.users[username].send() is being used to determine
-        the different ways to parse message and add colors. only
-        add colors to room names and user names! Anything with
-        'Error: ' should have the word error colored in red!
+        assign a text color and background color for a chatroom
         '''
-        # break message apart, parse for #room name and message text.
-        # add colors accordingly. 
-        ...
+        # break message apart, parse for #room name and randomly
+        # choose colors for each. 
+        if message == '#lobby':
+            self.rooms[message] = [self.colorfg['light blue'], None]
+        else:
+            message = message.split()
+            for word in message:
+                # actually add room names and not just room joining acknowledgements
+                if word[0] == '#' and word[-1] != '!' and word not in self.rooms.keys():
+                    # [0] == text color 
+                    # [1] == background color for message text
+                    self.rooms[word] = [choice(list(self.colorfg.values())), 
+                                        choice(list(self.colorbg.values()))] 
     
+    def get_colors(self, room):
+        '''
+        retrieve associated fg/bg colors with this room
+        '''
+        return self.rooms[room] if room in self.rooms.keys() else None
+
+
+    def display(self, message):
+        '''
+        take a message from the server, add a color to the room name
+        '''
+        # match room names with their foreground colors 
+        print(f"TUI TEST - rooms {list(self.rooms.keys())}")
+        message_ = message.split()
+        for word in message_:
+            if word[0] == '#' and word in self.rooms.keys():
+                message_[message_.index(word)] = f'{self.rooms[word][0]}{word}{Fore.RESET}'
+        msg = ' '.join(message_)
+        print(msg)
+
+
+    def shut_down_message(self, message):
+        '''
+        'SERVER OFFLINE! Closing connection...'
+        '''
+        print(f'{Fore.RED}{Back.WHITE}{message}')
+        print(Style.RESET_ALL)
+    
+    def connected_message(self, message):
+        '''
+        'Connected to server!'
+        '''
+        print(f'{Fore.GREEN}{message}')
+        print(Style.RESET_ALL)
+
     def error_messages(self, errors):
         '''
         Display an error message, or list of messages
         '''
         if type(errors) == str:
             print(f'{Fore.RED} ERROR: {errors}')
+            print(Style.RESET_ALL)
         elif type(errors) == list:
             print(f'{Fore.RED} ERROR')
             for e in range(len(errors)):
                 print(f'{Fore.RED}{e} : {errors[e]}')
+            print(Style.RESET_ALL)
         else:
             raise TypeError('erros must be a single str or list[str]! type is:', type(errors))
 
@@ -209,8 +241,8 @@ def app_info(info:dict):
 
 def supports_color():
     '''
-    Returns True if the running system's terminal supports color, and False
-    otherwise.
+    Returns True if the running system's terminal supports color using 
+    ANSI escape codes.
 
     Technique from:
     https://stackoverflow.com/questions/7445658/how-to-detect-if-the-console-does-support-ansi-escape-codes-in-python
