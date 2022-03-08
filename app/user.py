@@ -17,7 +17,6 @@ class User:
         self.socket = socket            # user's socket() object
         self.curr_rooms = [curr_room]   # list (list[str]) of room names user is active in
         self.muted_rooms = []           # list of muted rooms
-        
         self.blocked = []               # list of blocked users (list[str])
         self.dms = {}                   # dictionary of direct messages. 
                                         # key is sender (str), value is the message (str)

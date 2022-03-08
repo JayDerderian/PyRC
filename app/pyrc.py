@@ -23,7 +23,8 @@ def message_broadcast(room, sender_name, message):
     - sender_name = '' senders name (str)
     - message = '' message string
     '''
-    # Send the message to all clients in this room, including the sender. Excludes users who blocked sender!
+    # Send the message to all clients in this room, including the sender. 
+    # Excludes users who blocked sender, or users who muted this room!
     for client in room.clients:
         if room.clients[client].has_blocked(sender_name):
             continue
