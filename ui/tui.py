@@ -197,9 +197,6 @@ class TUI:
                 new_rooms.append(room_name_with_color)
                 orig_rooms.append(word)
 
-        # make sure this worked
-        assert len(new_rooms) == len(orig_rooms)
-
         # replace original instances with newly colorized room names
         for room in range(len(orig_rooms)):
             ind = message_.index(orig_rooms[room])
@@ -208,34 +205,31 @@ class TUI:
         # display final message
         print(" ".join(message_))
 
+
     def shut_down_message(self, message):
         '''
         'SERVER OFFLINE! Closing connection...'
         '''
-        print(f'{Fore.RED}{Back.WHITE}{message}')
-        print(Style.RESET_ALL)
+        print(f'{Fore.RED}{Back.WHITE}{message}{Style.RESET_ALL}')
     
     def connected_message(self, message):
         '''
-        'Connected to server!'
+        'Connected!'
         '''
-        print(f'{Fore.GREEN}{message}')
-        print(Style.RESET_ALL)
-
+        print(f'{Fore.GREEN}{message}{Style.RESET_ALL}')
+ 
     def error_messages(self, errors):
         '''
         Display an error message, or list of messages
         '''
         if type(errors) == str:
-            print(f'{Fore.RED} ERROR: {errors}')
-            print(Style.RESET_ALL)
+            print(f'{Fore.RED} ERROR: {errors}{Style.RESET_ALL}')
         elif type(errors) == list:
             print(f'{Fore.RED} ERROR')
             for e in range(len(errors)):
-                print(f'{Fore.RED}{e} : {errors[e]}')
-            print(Style.RESET_ALL)
+                print(f'{Fore.RED}{e} : {errors[e]}{Style.RESET_ALL}')
         else:
-            raise TypeError('erros must be a single str or list[str]! type is:', type(errors))
+            raise TypeError('errors must be a single str or list[str]! type is:', type(errors))
 
 # App info display. Not contingent on a computers ability to support colors.
 def app_info(info:dict):

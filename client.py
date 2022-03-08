@@ -43,7 +43,6 @@ def message():
     while True:
         # get message from user. 
         message = input()
-        # print()
 
         # display local help menu
         if message.split()[0]=='/help':
@@ -58,8 +57,8 @@ def message():
 
         # send to server
         else:
+            # assign a color to this room if we're joining a new one
             if SUPPORTS_COLOR and message.split()[0] == '/join':
-                # assign a color to this room if we're joining a new one
                 for word in message.split():
                     if word[0] == '#':
                         TEXT_UI.assign_colors(word)
@@ -94,6 +93,7 @@ def run_client():
                     print('\nSERVER OFFLINE! Closing connection...')
                 SOCKET.close()
                 break
+
             # otherwise its some other message
             else:
                 # get any room names, assign colors as needed, then display
@@ -105,6 +105,14 @@ def run_client():
         # case where there's a problem with the server
         except ConnectionResetError:
             pass
+        # case where we have a socket error
+        except socket.error:
+            if SUPPORTS_COLOR:
+                TEXT_UI.shut_down_message('SERVER OFFLINE! Closing connection...')
+            else:
+                print('\nSERVER OFFLINE! Closing connection...')
+            SOCKET.close()
+            break
 
 # display available commands
 def show_commands():
@@ -113,19 +121,6 @@ def show_commands():
     '''
     for key in CLIENT_COMMANDS:
         print(CLIENT_COMMANDS[key])
-
-# # get room names from server
-# def check_for_rooms(message):
-#     # find room names
-#     message_ = message.split()
-#     for word in message_:
-#         # make sure this is a room name and not just an acknowledgement that we've 
-#         # joinded a room. 
-#         if word[0] == '#' and word[-1] != '!' and word not in CLIENT_INFO['Rooms']:
-#             CLIENT_INFO['Rooms'].append(word)
-#         if SUPPORTS_COLOR:
-#             # randomly assign a room name color and background color
-#             TEXT_UI.assign_colors(message) 
 
 
 ######## DRIVER CODE #########
