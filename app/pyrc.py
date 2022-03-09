@@ -678,7 +678,7 @@ class PyRC:
         ### Case where user wants to mute some of their active rooms ###
         elif message.split()[0] == '/mute':
             '''
-            syntax: /mute @<user_name>
+            syntax: /mute #room1 #room2
             '''
             # case where user forgets #
             if '#' not in message.split()[1]:
@@ -697,21 +697,28 @@ class PyRC:
         ### Case where a user wants to unmute some of their active rooms
         elif message.split()[0] == '/unmute':
             '''
-            syntax: /unmute @<user_name>
+            syntax: /unmute #room -or- /unmute all
             '''
-            # case where user forgets #
-            if '#' not in message.split()[1]:
-                sender_socket.send('Error: command must start with a /!'.encode('ascii'))
             # case where user forgets first arg
-            elif len(message.split()) == 1:
+            if len(message.split()) == 1:
                 sender_socket.send('Error: must include at least one room name argument. \nex: /mute #roomname'.encode('ascii'))
-            # otherwise unmute the room...
+            # case where user forgets #
+            elif len(message.split()) == 2 and '#' not in message.split()[1]:
+                sender_socket.send('Error: command must start with a /!'.encode('ascii'))
+            # otherwise unmute the room(s)...
             else:
-                message_ = message.split()
-                for word in message_:
-                    # make sure this is actually a room name
-                    if word[0] == '#' and word in self.rooms.keys():
-                        self.users[sender_name].unmute(word)
+                # Unmute *all* muted rooms for this user or n amount of specified rooms
+                if message.split()[1] == 'all' or message.split().count('#') > 1:
+                    message_ = message.split()
+                    for word in message_:
+                        # make sure this is actually a room name
+                        if word[0] == '#' and word in self.rooms.keys():
+                            self.users[sender_name].unmute(word)
+                            sender_socket.send(f'{word} has been unmuted!'.encode('ascii'))
+                # unmute *one* room
+                else:
+                    room = message.split()[1]
+                    self.users[sender_name].unmute(room)
 
         ### Case where user wants to directly message another user ###
         elif message.split()[0] == "/message":

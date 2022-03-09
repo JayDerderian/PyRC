@@ -55,7 +55,7 @@ python Client.py
 ```
 ```/unmute```: Unmute output from selected rooms
 ```
-/unmute #room1 #room2
+/unmute #room1 #room2 -or- /unmute all
 ```
 ```/message```: Send a direct message to another user. 
 ```
@@ -78,5 +78,5 @@ python Client.py
 /unblock @user_name
 ```
 ```/clear```: Clear terminal window.                      
-```/help```: Display available commands.                                                               
+```/help```: Display available commands.                                                            
 ```/quit```: Disconnects the client from the server.     
