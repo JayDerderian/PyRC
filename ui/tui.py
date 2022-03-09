@@ -184,6 +184,11 @@ class TUI:
         '''
         take a message from the server, add a color to the room name,
         the display message
+
+        TODO: Try to add foreground and background to message text?
+
+        if message.split()[n] == ':'
+            use list slice to get everything AFTER the index of ':' and before a '#'
         '''
         # match room names with their foreground colors 
         new_rooms = []
@@ -197,7 +202,7 @@ class TUI:
                 new_rooms.append(room_name_with_color)
                 orig_rooms.append(word)
 
-        # replace original instances with newly colorized room names
+        # replace original instances with newly colorized room 
         for room in range(len(orig_rooms)):
             ind = message_.index(orig_rooms[room])
             message_[ind] = new_rooms[room]

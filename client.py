@@ -6,6 +6,7 @@ Client module.
 
 Handles front end of client application, user message input, and communicates with the server.
 '''
+import os
 import socket
 import threading
 
@@ -54,6 +55,10 @@ def message():
             SOCKET.close()
             exit()
 
+        # clear terminal output
+        elif message.split()[0] == '/clear':
+            clear()
+
         # send to server
         else:
             # assign a color to this room if we're joining a new one
@@ -78,7 +83,6 @@ def run_client():
 
             # case where it's our first connection
             if message == 'Connected to server':
-                # CLIENT_INFO['Rooms'].append('#lobby')
                 if SUPPORTS_COLOR:
                     TEXT_UI.assign_colors('#lobby')
                 # send user name as the first message.
@@ -120,6 +124,13 @@ def show_commands():
     '''
     for key in CLIENT_COMMANDS:
         print(CLIENT_COMMANDS[key])
+
+# clear terminal
+def clear():
+    '''
+    clears terminal output
+    '''
+    os.system('cls' if os.name=='nt' else 'clear')
 
 
 ######## DRIVER CODE #########
