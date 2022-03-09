@@ -33,7 +33,8 @@ def message_broadcast(room, sender_name, message):
         room.clients[client].send(f'{room.name} {sender_name} : {message} '.encode('ascii'))
 
 
-# The container that has rooms, which have lists of clients
+# PyRC class. 
+# Manages chatrooms and enables certain functionalities between users.
 class PyRC:
     '''
     The main IRC chat application. One default room - #lobby - is created when
@@ -152,15 +153,12 @@ class PyRC:
     def join_room(self, room_to_join, sender_name):
         '''
         join or create a new Chatroom() instance. 
-        
-        does not remove a user from a previous room!
 
         parameters
         --------------
         - room_to_join = '#room_name' OR list['#room_name1', '#room_name2',..]
         - sender_name = ''
         '''
-
         # Case where this room doesn't already exist
         if room_to_join not in self.rooms.keys():
             # create new room.
@@ -248,6 +246,7 @@ class PyRC:
             else:
                 ...
 
+    # leave all rooms except #lobby
     def leave_all(self, sender_name):
         '''
         removes a user from all their active rooms, then returns
@@ -339,6 +338,7 @@ class PyRC:
             # User() will also check whether sender was blocked by receiver.
             self.users[receiver].get_dm(sender, message)
 
+    # read direct messages
     def read_dms(self, receiver, sender=None):
         '''
         gets a user's direct messages. works with the User() object.
@@ -462,10 +462,13 @@ class PyRC:
         - /help
             - displays a list of available commands
 
+        - /clear
+            - clear console screen.
+
         - /quit
             - leave current instance.
 
-        NOTE: /quit and /help are handled on the client side!
+        NOTE: /quit, /clear, and /help are handled on the client side!
         '''
         # send message to each room the user is currently in. 
         # this just checks whether there's a command prior to the message
@@ -473,7 +476,7 @@ class PyRC:
             for room in self.users[sender_name].curr_rooms:
                 message_broadcast(self.rooms[room], sender_name, message)
 
-        #### Case where user wants to join a room ###:
+        ### Case where user wants to join a room ###:
         elif message.split()[0] == '/join':
             '''
             syntax : /join #room_name1 (opt) #room_name2 etc...
@@ -674,6 +677,9 @@ class PyRC:
 
         ### Case where user wants to mute some of their active rooms ###
         elif message.split()[0] == '/mute':
+            '''
+            syntax: /mute @<user_name>
+            '''
             # case where user forgets #
             if '#' not in message.split()[1]:
                 sender_socket.send('Error: command must start with a /!'.encode('ascii'))
@@ -690,6 +696,9 @@ class PyRC:
     
         ### Case where a user wants to unmute some of their active rooms
         elif message.split()[0] == '/unmute':
+            '''
+            syntax: /unmute @<user_name>
+            '''
             # case where user forgets #
             if '#' not in message.split()[1]:
                 sender_socket.send('Error: command must start with a /!'.encode('ascii'))
@@ -756,7 +765,7 @@ class PyRC:
                 return 'Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'
 
             # case where we try to message more than one user
-            if list(message).count('@') > 1: 
+            elif list(message).count('@') > 1: 
                 sender_socket.send('Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
                 return 'Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'
 

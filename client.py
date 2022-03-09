@@ -27,8 +27,6 @@ CLIENT_INFO = {
 }
 
 #### TUI ####
-
-# This checks whether a given terminal can display colors
 SUPPORTS_COLOR = False
 if supports_color():
     os.system('color')
@@ -104,7 +102,7 @@ def run_client():
                 if SUPPORTS_COLOR:
                     TEXT_UI.display(message)
                 else:
-                    print(message)
+                    print(message + '\n')
 
         # case where there's a problem with the server
         except ConnectionResetError:
@@ -151,7 +149,6 @@ if __name__ == '__main__':
         SOCKET.connect(CLIENT_INFO['Address'])
         if SUPPORTS_COLOR:
             TEXT_UI.connected_message('Connected!')
-            print(f'Host: {CLIENT_INFO["Address"][0]}, Port: {CLIENT_INFO["Address"][1]}\n')
         else:
             print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
         
