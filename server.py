@@ -121,7 +121,8 @@ class Server(threading.Thread):
 
 def handle(client):
     '''
-    handles individual user I/O. operates in it's own thread.
+    handles messages from clients and sends them to PyRC to be parsed. 
+    operates in it's own thread.
     '''
     while True:
         # case where the server recieves a message 

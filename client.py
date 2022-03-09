@@ -36,7 +36,7 @@ if supports_color():
 # messaging functionality
 def message():
     '''
-    handles client messages sent tot he server. 
+    handles client messages sent to the server from the client. 
     runs in its own thread.
     '''
     while True:
@@ -139,7 +139,8 @@ if __name__ == '__main__':
     app_info(APP_INFO)                                 # display welcome message
     CLIENT_INFO["Name"] = input('Enter username > ')   # get the username
 
-    # Create a new socket using IPv4 address familty (AF_INET) and TCP protocol (SOCK_STREAM)
+    # Create a new socket using IPv4 address familty (AF_INET) 
+    # and TCP protocol (SOCK_STREAM)
     SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     # attempt to contact server
