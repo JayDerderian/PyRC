@@ -77,6 +77,6 @@ python Client.py
 ```
 /unblock @user_name
 ```
-```/clear```: Clear terminal window
-```/help```: Display available commands                                                               
-```/quit```: Disconnects the client from the server.  
+```/clear```: Clear terminal window.                      
+```/help```: Display available commands.                                                               
+```/quit```: Disconnects the client from the server.     
