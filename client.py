@@ -31,6 +31,7 @@ CLIENT_INFO = {
 # This checks whether a given terminal can display colors
 SUPPORTS_COLOR = False
 if supports_color():
+    os.system('color')
     TEXT_UI = TUI()
     SUPPORTS_COLOR = True
 

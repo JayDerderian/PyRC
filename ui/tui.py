@@ -185,8 +185,6 @@ class TUI:
         take a message from the server, add a color to the room name,
         the display message
 
-        TODO: Try to add foreground and background to message text?
-
         if message.split()[n] == ':'
             use list slice to get everything AFTER the index of ':' and before a '#'
         '''

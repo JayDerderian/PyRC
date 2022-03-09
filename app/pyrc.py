@@ -675,7 +675,7 @@ class PyRC:
         ### Case where user wants to mute some of their active rooms ###
         elif message.split()[0] == '/mute':
             # case where user forgets #
-            if '#' not in message.split()[0]:
+            if '#' not in message.split()[1]:
                 sender_socket.send('Error: command must start with a /!'.encode('ascii'))
             # case where user forgets first arg
             elif len(message.split()) == 1:
@@ -691,7 +691,7 @@ class PyRC:
         ### Case where a user wants to unmute some of their active rooms
         elif message.split()[0] == '/unmute':
             # case where user forgets #
-            if '#' not in message.split()[0]:
+            if '#' not in message.split()[1]:
                 sender_socket.send('Error: command must start with a /!'.encode('ascii'))
             # case where user forgets first arg
             elif len(message.split()) == 1:
