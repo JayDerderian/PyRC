@@ -697,14 +697,14 @@ class PyRC:
         ### Case where a user wants to unmute some of their active rooms
         elif message.split()[0] == '/unmute':
             '''
-            syntax: /unmute #room -or- /unmute all
+            syntax: /unmute #room1 #room2... -or- /unmute all
             '''
             # case where user forgets first arg
             if len(message.split()) == 1:
                 sender_socket.send('Error: must include at least one room name argument. \nex: /mute #roomname'.encode('ascii'))
-            # case where user forgets #
-            elif len(message.split()) == 2 and '#' not in message.split()[1]:
-                sender_socket.send('Error: command must start with a /!'.encode('ascii'))
+            # case where user forgets # and the second arg isn't 'all'
+            elif len(message.split()) == 2 and '#' not in message.split()[1] and message.split()[1] != 'all':
+                sender_socket.send('Error: room name must start with a "#"! \nex: /unmute #roomname'.encode('ascii'))
             # otherwise unmute the room(s)...
             else:
                 # Unmute *all* muted rooms for this user or n amount of specified rooms

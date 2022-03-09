@@ -31,12 +31,11 @@ python Client.py
 ```(No command) <message>```: Send a message to all the rooms you're active in.  
 ```/rooms```: List all active rooms in the server.                               
 ```/myrooms```: List all the rooms you're active in.                                 
-
 ```/join```: Adds client to an existing room, or creates and joins a room if the room does not exist. User can join multiple rooms at once. 
 ```
 /join #coding -or- /join #room1 #room2 #room3
 ```
-```/create```: Create a new room if it doesn't already exist.
+```/create```: Create a new room if it doesn't already exist.                               
 ```
 /create #room
 ```
@@ -49,7 +48,7 @@ python Client.py
 ```
 /broadcast #room1 : <message1> / #room2 : <message2 / 
 ```
-```/mute```: Mute output from selected rooms.
+```/mute```: Mute output from selected rooms. 
 ```
 /mute #room1 #room2
 ```
