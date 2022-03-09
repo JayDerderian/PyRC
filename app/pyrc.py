@@ -221,6 +221,10 @@ class PyRC:
         elif self.rooms[room_to_leave].has_user(sender_name) == False:  
             self.users[sender_name].send(f'Error: You are not in {room_to_leave}\n'.encode('ascii'))
 
+        # case where user tries to leave #lobby (default room)
+        elif room_to_leave == DEFAULT_ROOM_NAME:
+            self.users[sender_name].send(f'Error: {DEFAULT_ROOM_NAME} cannot be left! \nUse /quit to exit.'.encode('ascii'))
+
         # otherwise leave
         else:
             # remove user from SINGLE room. doesn't send them anywhere

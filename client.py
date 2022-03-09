@@ -152,8 +152,11 @@ if __name__ == '__main__':
             TEXT_UI.connected_message('Connected!')
         else:
             print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
-        
+    
         ### MAIN THREADS ###
+        # These two threads handle incoming messages from the server and
+        # messages sent by the user to the server. Since they're operating
+        # in separate threads, this facilitates asynchronous I/O. 
         rt = threading.Thread(name='receive thread', target=run_client)
         wt = threading.Thread(name='write thread', target=message)
         rt.start()
