@@ -25,6 +25,7 @@ CLIENT_INFO = {
     "Name": '',          # client user name
     "Address": ADDR,     # (host, port)
 }
+RUNNING = True
 
 #### TUI ####
 SUPPORTS_COLOR = False
@@ -135,8 +136,18 @@ def clear():
     '''
     os.system('cls' if os.name=='nt' else 'clear')
 
+# try to reconnect to the server?
+def keep_running():
+    '''
+    try to reconnect to server?
+    '''
+    ans = input('\nReconnect to server? (y/n)\n')
+    if ans.lower() == 'n' or ans.lower() == 'no':
+        return False
+    return True
 
-######## DRIVER CODE #########
+
+############# DRIVER CODE ##############
 if __name__ == '__main__':
 
     ### START UP ###
@@ -147,42 +158,49 @@ if __name__ == '__main__':
     # and TCP protocol (SOCK_STREAM)
     SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    # attempt to contact server
-    print('\nConnecting to server...')    
-    try:
-        # send initial message (the username) to server
-        SOCKET.connect(CLIENT_INFO['Address'])
-        if SUPPORTS_COLOR:
-            TEXT_UI.connected_message('Connected!')
-        else:
-            print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
-    
-        ### MAIN THREADS ###
-        # These two threads handle incoming messages from the server and
-        # messages sent by the user to the server. Since they're operating
-        # in separate threads, this facilitates asynchronous I/O. 
-        rt = threading.Thread(name='receive thread', target=run_client)
-        wt = threading.Thread(name='write thread', target=message)
-        rt.start()
-        wt.start()
-        # this continually checks to make sure each thread is running. 
-        # its janky af and probably really silly, but it seems to 
-        # handle thread exceptions when the client shuts down using the
-        # /quit command
+    # main loop
+    while RUNNING:
+        # attempt to contact server
+        print('\nConnecting to server...')    
         try:
-            while rt.is_alive() and wt.is_alive():
-                pass
-        except threading.ThreadError:
-            exit()
+            # send initial message (the username) to server
+            SOCKET.connect(CLIENT_INFO['Address'])
+            if SUPPORTS_COLOR:
+                TEXT_UI.connected_message('Connected!')
+            else:
+                print(f'...Connected to server at host: {CLIENT_INFO["Address"][0]}, port: {CLIENT_INFO["Address"][1]}\n')
+        
+            ### MAIN THREADS ###
+            # These two threads handle incoming messages from the server and
+            # messages sent by the user to the server. Since they're operating
+            # in separate threads, this facilitates asynchronous I/O. 
+            rt = threading.Thread(name='receive thread', target=run_client)
+            wt = threading.Thread(name='write thread', target=message)
+            rt.start()
+            wt.start()
+            # this continually checks to make sure each thread is running. 
+            # its janky af and probably really silly, but it seems to 
+            # handle thread exceptions when the client shuts down using the
+            # /quit command
+            try:
+                while rt.is_alive() and wt.is_alive():
+                    pass
+            except threading.ThreadError:
+                if SUPPORTS_COLOR:
+                    TEXT_UI.shut_down_message('SERVER OFFLINE!')
+                else:
+                    print('SERVER OFFLINE!')
 
-    except:
-        if SUPPORTS_COLOR:
-            TEXT_UI.error_messages('Unable to connect!')
-        else:
-            print('...Unable to connect!')
-        try:
-            SOCKET.shutdown(socket.SHUT_RDWR)
-            SOCKET.close()
-            exit()
         except:
-            exit()
+            if SUPPORTS_COLOR:
+                TEXT_UI.error_messages('Unable to connect!')
+            else:
+                print('...Unable to connect!')
+
+        if keep_running() == False:
+            try:
+                SOCKET.shutdown(socket.SHUT_RDWR)
+                SOCKET.close()
+            except socket.error:
+                pass
+            break
