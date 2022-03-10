@@ -66,7 +66,7 @@ class Server(threading.Thread):
         '''
         print('\n***starting server***')
 
-        # Create a new socket using IPv4 address familty (AF_INET),
+        # Create a new socket using IPv4 address family (AF_INET),
         # and the TCP protocol (SOCK_STREAM)
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.bind(ADDR)
