@@ -15,7 +15,7 @@ This was written in Python primarily using the socket module, and other select p
 Make sure that you have Python 3.6 or later installed. The following commands will install the project and run the server.
 
 ```
-git clone https://github.com/<tbd>
+git clone https://github.com/JayDerderian/PyRC
 
 cd pychat
 python Server.py
