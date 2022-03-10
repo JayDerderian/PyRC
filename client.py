@@ -189,7 +189,6 @@ if __name__ == '__main__':
                     TEXT_UI.shut_down_message('SERVER OFFLINE!')
                 else:
                     print('SERVER OFFLINE!')
-
         except:
             if SUPPORTS_COLOR:
                 TEXT_UI.error_messages('Unable to connect!')
