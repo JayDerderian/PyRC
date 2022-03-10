@@ -74,7 +74,7 @@ class Chatroom:
             for user in self.clients:
                 if self.clients[user].has_blocked(sender):
                     continue
-                elif self.clients[user].has_muted(self.room):
+                elif self.clients[user].has_muted(self.name):
                     continue
                 self.clients[user].send(message.encode('ascii'))
         else:
