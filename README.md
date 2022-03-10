@@ -43,8 +43,8 @@ python Client.py
 ```
 /leave #coding -or- /leave all
 ```
-```/users```: List all user in the server.                                                             
-```/broadcast```: Send *distinct* messages to *multiple* rooms, regardless if you're in those rooms.
+```/users```: List all user in the server.                               
+````/broadcast```: Send *distinct* messages to *multiple* rooms, regardless if you're in those rooms.
 ```
 /broadcast #room1 : <message1> / #room2 : <message2 / 
 ```

@@ -125,8 +125,7 @@ def handle(client):
     operates in it's own thread.
     '''
     while True:
-        # case where the server recieves a message 
-        # from an existing client
+        # case where the server receives a message from an existing client
         try:
             message = client.recv(BUFFER_MAX).decode('ascii')
             # search user list for the username associated with this client

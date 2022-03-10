@@ -29,6 +29,10 @@ CLIENT_INFO = {
 #### TUI ####
 SUPPORTS_COLOR = False
 if supports_color():
+    TEXT_UI = TUI()
+    SUPPORTS_COLOR = True
+# TODO: test! 
+else:
     os.system('color')
     TEXT_UI = TUI()
     SUPPORTS_COLOR = True
