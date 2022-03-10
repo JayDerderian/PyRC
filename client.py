@@ -31,8 +31,8 @@ SUPPORTS_COLOR = False
 if supports_color():
     TEXT_UI = TUI()
     SUPPORTS_COLOR = True
-# TODO: test! 
 else:
+    # enable ANSI colors
     os.system('color')
     TEXT_UI = TUI()
     SUPPORTS_COLOR = True
