@@ -5,6 +5,7 @@ CS 594
 Application module - the core functionality of the PyRC Chat program.
 '''
 
+from numpy import reciprocal
 from app.user import User
 from app.chatroom import Chatroom
 
@@ -301,10 +302,12 @@ class PyRC:
                         part of this string)
         - receiver = '' (receiver of the whisper)
         '''
-        
+        print("send_whisper TEST args:", sender_name, message, receiver)
+        #pop @ from name
+        receiver = self.parse_user_name(receiver)
         # case where receiver is not in app instance
-        if receiver not in self.users.keys():                  
-            self.users[sender_name].send(f'Error: {receiver} not in application instance!'.encod('ascii'))
+        if receiver not in self.users:                  
+            self.users[sender_name].send(f'Error: {receiver} not in server!'.encode('ascii'))
 
         # case where receiver blocked sender
         elif self.users[receiver].has_blocked(sender_name):
@@ -312,9 +315,10 @@ class PyRC:
 
         # otherwise, try to send whisper
         else:
-            # remove command and username arguments, then send message text
-            message_text = message.split()[2:]
-            message_text = f'/whisper @{sender_name}: {" ".join(message_text)}'
+            print("send_whisper message: ", message)
+            print("receiver: ", receiver)
+            message_text = f'/whisper @{sender_name}: {message}'
+            print("send_whisper final message: ", message_text)
             # send message to receiver
             self.users[receiver].send(message_text.encode('ascii'))
 
@@ -383,6 +387,7 @@ class PyRC:
         '''
         name = [w for w in user_name]
         name.remove('@')
+        print("parse_user_name TEST: name = ", name)
         return ''.join(name)
 
     # main message parser.
@@ -769,23 +774,32 @@ class PyRC:
         elif message.split()[0] == '/whisper':
             '''
             syntax: /whisper @<user_name>
-            '''   
+            '''
+            print("/whisper TEST")   
             # case where there's no username or text argument
             if len(message.split()) == 1:
+                print("/whisper NO USERNAME") 
                 sender_socket.send('Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
                 return 'Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'
 
             # case where we try to message more than one user
-            elif list(message).count('@') > 1: 
+            elif list(message).count('@') > 1:
+                print("/whisper NO @ SYMBOL")  
                 sender_socket.send('Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
                 return 'Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'
 
             # otherwise, get receiver name and send to method
             else:
+                print("/whisper TEST trying to parse...") 
                 # get receiver's name, then message text
-                receiver = self.parse_user_name(message[1])
-                message_text = message[2:]
-                self.send_whisper(sender_name, message_, receiver)
+                message_ = message.split()
+                message_.pop(0)  # get rid of command
+                print("/whisper TEST sans command: ", message_)
+                receiver = message_[0]
+                print("/whisper TEST receiver: ", receiver)
+                message_.pop(0)  # get rid of receiver name
+                print("/whisper TEST message text: ", message_)
+                self.send_whisper(sender_name, " ".join(message_), receiver)
 
         ### Case where user wants to block DM's from another user ###
         elif message.split()[0] == "/block":
