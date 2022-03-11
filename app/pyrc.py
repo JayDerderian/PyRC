@@ -302,7 +302,6 @@ class PyRC:
                         part of this string)
         - receiver = '' (receiver of the whisper)
         '''
-        print("send_whisper TEST args:", sender_name, message, receiver)
         #pop @ from name
         receiver = self.parse_user_name(receiver)
         # case where receiver is not in app instance
@@ -315,10 +314,7 @@ class PyRC:
 
         # otherwise, try to send whisper
         else:
-            print("send_whisper message: ", message)
-            print("receiver: ", receiver)
             message_text = f'/whisper @{sender_name}: {message}'
-            print("send_whisper final message: ", message_text)
             # send message to receiver
             self.users[receiver].send(message_text.encode('ascii'))
 
@@ -790,15 +786,11 @@ class PyRC:
 
             # otherwise, get receiver name and send to method
             else:
-                print("/whisper TEST trying to parse...") 
                 # get receiver's name, then message text
                 message_ = message.split()
                 message_.pop(0)  # get rid of command
-                print("/whisper TEST sans command: ", message_)
                 receiver = message_[0]
-                print("/whisper TEST receiver: ", receiver)
                 message_.pop(0)  # get rid of receiver name
-                print("/whisper TEST message text: ", message_)
                 self.send_whisper(sender_name, " ".join(message_), receiver)
 
         ### Case where user wants to block DM's from another user ###
