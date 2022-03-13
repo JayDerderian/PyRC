@@ -383,7 +383,6 @@ class PyRC:
         '''
         name = [w for w in user_name]
         name.remove('@')
-        print("parse_user_name TEST: name = ", name)
         return ''.join(name)
 
     # main message parser.
@@ -770,17 +769,14 @@ class PyRC:
         elif message.split()[0] == '/whisper':
             '''
             syntax: /whisper @<user_name>
-            '''
-            print("/whisper TEST")   
+            ''' 
             # case where there's no username or text argument
             if len(message.split()) == 1:
-                print("/whisper NO USERNAME") 
                 sender_socket.send('Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
                 return 'Error: No username argument found! \nuse syntax /whisper @<user_name> <message>'
 
             # case where we try to message more than one user
             elif list(message).count('@') > 1:
-                print("/whisper NO @ SYMBOL")  
                 sender_socket.send('Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'.encode('ascii'))
                 return 'Error: too many username arguments found! \nuse syntax /whisper @<user_name> <message>'
 
