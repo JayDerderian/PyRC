@@ -39,7 +39,7 @@ python Client.py
 ```
 /create #room
 ```
-```/leave```: Removes a client from a room. Removes the room from the server when the last client leaves. Use 'all' argument to leave all active rooms except the #lobby. 
+```/leave```: Removes a client from a room. Use 'all' argument to leave all active rooms except the #lobby. 
 ```
 /leave #coding -or- /leave all
 ```
@@ -64,7 +64,7 @@ python Client.py
 ```
 /dms -or- /dms @user_name
 ```
-```/whisper```: Directly message another user in real-time, regardless if they're in the same room as you.
+```/whisper```: Directly message another user in real time, regardless if they're in the same room as you.
 ```
 /whisper @user_name <message>
 ```
