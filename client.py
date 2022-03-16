@@ -52,16 +52,16 @@ def message():
         if message.split()[0]=='/help':
             show_commands()
         
+        # clear terminal output
+        elif message.split()[0] == '/clear':
+            clear()
+
         # disconnect from server and exit application.
         elif message.split()[0] == '/quit':
             print('\n***Disconnecting!***')
             SOCKET.shutdown(socket.SHUT_RDWR)
             SOCKET.close()
             exit()
-
-        # clear terminal output
-        elif message.split()[0] == '/clear':
-            clear()
 
         # send to server
         else:
