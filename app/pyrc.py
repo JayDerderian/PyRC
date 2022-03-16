@@ -476,15 +476,16 @@ class PyRC:
 
         NOTE: /quit, /clear, and /help are handled on the client side!
         '''
-        # send message to each room the user is currently in. 
-        # this just checks whether there's a command prior to the message
-        if message[0] != '/':
-            for room in self.users[sender_name].curr_rooms:
-                message_broadcast(self.rooms[room], sender_name, message)
 
         ### case where client sends an empty message ###
-        elif not message:
+        if not message:
             pass
+
+        # send message to each room the user is currently in. 
+        # this just checks whether there's a command prior to the message
+        elif message[0] != '/':
+            for room in self.users[sender_name].curr_rooms:
+                message_broadcast(self.rooms[room], sender_name, message)
 
         ### Case where user wants to join a room ###:
         elif message.split()[0] == '/join':
