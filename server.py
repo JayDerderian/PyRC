@@ -94,11 +94,13 @@ class Server(threading.Thread):
                     print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
                     # add user to instance (and default room) and update user dict
-                    APP.add_user(new_user, client)
-
-                    # create a new thread for this client to handle message I/O
-                    ACTIVE_THREADS[client] = threading.Thread(target=handle, args=(client,))
-                    ACTIVE_THREADS[client].start()
+                    # only start a new thread if this is *actually* a new user!
+                    if APP.add_user(new_user, client):
+                        # create a new thread for this client to handle message I/O
+                        ACTIVE_THREADS[client] = threading.Thread(target=handle, args=(client,))
+                        ACTIVE_THREADS[client].start()
+                    else:
+                        ...
 
                 # message from existing user (handled in separate thread!)
                 else:

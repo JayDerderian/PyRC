@@ -78,10 +78,12 @@ class PyRC:
             join_message = f'{user_name} joined {DEFAULT_ROOM_NAME}!'
             # send join message to room
             message_broadcast(self.rooms[DEFAULT_ROOM_NAME], user_name, join_message)
+            return True
 
         # case where they're already in the instance
         else:
             new_user_socket.send(f'{user_name} is already in this instance!'.encode('ascii'))
+            return False
 
     # remove a user from the instance
     def remove_user(self, user_name):
