@@ -89,8 +89,6 @@ class Server(threading.Thread):
 
                     # get user name since that's the first message
                     new_user = client.recv(BUFFER_MAX).decode('ascii')
-                    SERVER_INFO["Sockets"].append(client)
-                    SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
                     print(f'...new user connected! name: {new_user}, addr: {str(address)}\n')
 
                     # add user to instance (and default room) and update user dict
@@ -99,6 +97,9 @@ class Server(threading.Thread):
                         # create a new thread for this client to handle message I/O
                         ACTIVE_THREADS[client] = threading.Thread(target=handle, args=(client,))
                         ACTIVE_THREADS[client].start()
+
+                        SERVER_INFO["Sockets"].append(client)
+                        SERVER_INFO["Users"].append((client, new_user)) # yes, i know clients are being saved twice
                     else:
                         ...
 
