@@ -481,7 +481,7 @@ class PyRC:
         if not message:
             pass
 
-        # send message to each room the user is currently in. 
+        ### send message to each room the user is currently in. ###
         # this just checks whether there's a command prior to the message
         elif message[0] != '/':
             for room in self.users[sender_name].curr_rooms:
