@@ -482,6 +482,10 @@ class PyRC:
             for room in self.users[sender_name].curr_rooms:
                 message_broadcast(self.rooms[room], sender_name, message)
 
+        ### case where client sends an empty message ###
+        elif not message:
+            pass
+
         ### Case where user wants to join a room ###:
         elif message.split()[0] == '/join':
             '''
