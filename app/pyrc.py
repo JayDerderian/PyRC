@@ -5,7 +5,6 @@ CS 594
 Application module - the core functionality of the PyRC Chat program.
 '''
 
-from numpy import reciprocal
 from app.user import User
 from app.chatroom import Chatroom
 
